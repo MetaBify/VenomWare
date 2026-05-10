@@ -6,10 +6,14 @@ const loginState = document.querySelector("#login-state");
 const refreshButton = document.querySelector("#refresh-state");
 const logoutButton = document.querySelector("#logout-button");
 const saveButton = document.querySelector("#save-script");
+const loadScriptButton = document.querySelector("#load-script");
+const revokeAllButton = document.querySelector("#revoke-all");
+const revokeAllConfirm = document.querySelector("#revoke-all-confirm");
 const scriptInput = document.querySelector("#script-body");
 const scriptState = document.querySelector("#script-state");
 const attemptsEl = document.querySelector("#attempts");
 const keysEl = document.querySelector("#keys");
+const approvedUsersEl = document.querySelector("#approved-users");
 const generatedKey = document.querySelector("#generated-key");
 
 let currentAdminKey = sessionStorage.getItem("adminKey") || "";
@@ -74,6 +78,23 @@ async function revokeKey(key) {
   await loadState();
 }
 
+async function revokeAllKeys() {
+  if (!revokeAllConfirm.checked) {
+    scriptState.textContent = "Check confirm before revoking all keys.";
+    return;
+  }
+
+  const data = await api("revokeAll", {
+    method: "POST",
+    body: JSON.stringify({ confirm: true })
+  });
+
+  revokeAllConfirm.checked = false;
+  revokeAllButton.disabled = true;
+  scriptState.textContent = `Revoked ${data.count} active key(s).`;
+  await loadState();
+}
+
 function renderAttempts(attempts) {
   attemptsEl.replaceChildren();
 
@@ -119,6 +140,28 @@ function renderKeys(keys) {
   }
 }
 
+function renderApprovedUsers(users) {
+  approvedUsersEl.replaceChildren();
+
+  if (!users.length) {
+    approvedUsersEl.append(row("<span>No approved users yet.</span>"));
+    return;
+  }
+
+  for (const item of users) {
+    const el = row(`
+      <div>
+        <strong>${item.ip}</strong>
+        <small>requests ${item.requestCount || 0} - script uses ${item.uses || 0}</small>
+        <code>${item.key}</code>
+      </div>
+      <button type="button">Revoke</button>
+    `);
+    el.querySelector("button").addEventListener("click", () => revokeKey(item.key));
+    approvedUsersEl.append(el);
+  }
+}
+
 async function loadState() {
   const data = await api("state");
 
@@ -127,6 +170,7 @@ async function loadState() {
     : "No script body stored yet.";
 
   renderAttempts(data.attempts || []);
+  renderApprovedUsers(data.approvedUsers || []);
   renderKeys(data.keys || []);
 }
 
@@ -149,7 +193,19 @@ function logout() {
   scriptInput.value = "";
   attemptsEl.replaceChildren();
   keysEl.replaceChildren();
+  approvedUsersEl.replaceChildren();
+  revokeAllConfirm.checked = false;
+  revokeAllButton.disabled = true;
   setLoggedIn(false);
+}
+
+async function loadStoredScript() {
+  const data = await api("script");
+
+  scriptInput.value = data.script || "";
+  scriptState.textContent = data.length
+    ? `Loaded stored script length: ${data.length} bytes`
+    : "No stored script body yet.";
 }
 
 async function saveScript() {
@@ -165,7 +221,7 @@ async function saveScript() {
     body: JSON.stringify({ script })
   });
 
-  scriptState.textContent = `Saved script length: ${data.length} bytes`;
+  scriptState.textContent = `Saved script length: ${data.length} bytes. Previous script was replaced.`;
   scriptInput.value = "";
 }
 
@@ -189,6 +245,22 @@ logoutButton.addEventListener("click", logout);
 
 saveButton.addEventListener("click", () => {
   saveScript().catch((error) => {
+    scriptState.textContent = error.message;
+  });
+});
+
+loadScriptButton.addEventListener("click", () => {
+  loadStoredScript().catch((error) => {
+    scriptState.textContent = error.message;
+  });
+});
+
+revokeAllConfirm.addEventListener("change", () => {
+  revokeAllButton.disabled = !revokeAllConfirm.checked;
+});
+
+revokeAllButton.addEventListener("click", () => {
+  revokeAllKeys().catch((error) => {
     scriptState.textContent = error.message;
   });
 });

@@ -25,6 +25,7 @@ SCRIPT_BODY_BASE64=base64_lua_source
 ```
 
 The admin panel stores the real script body in private Vercel Blob storage. Paste the obfuscated Lua there after deployment.
+Saving a new script body overwrites `venom-host/script.lua`, so the previous script is replaced.
 
 ## Flow
 
@@ -44,6 +45,8 @@ loadstring(game:HttpGet("https://your-domain.vercel.app/api/script?key=GENERATED
 ```
 
 The generated key only works from the approved IP.
+
+The landing page also has a small tutorial and a keyed-loader copy box. Paste the generated key there to build the executor loader.
 
 ## Notes
 

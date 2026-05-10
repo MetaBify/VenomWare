@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="shell">
-    <section class="panel">
+    <section class="panel home-panel">
       <div class="brand">
         <div class="mark">VW</div>
         <div>
@@ -19,8 +19,24 @@
 
       <div class="copy-row">
         <input id="raw-url" value="/api/script" readonly>
-        <button id="copy-url" type="button">Copy</button>
+        <button id="copy-url" type="button">Copy First Loader</button>
       </div>
+
+      <section class="tutorial">
+        <h2>How to use</h2>
+        <ol>
+          <li>Run the first loader in your executor. It registers your IP and shows pending access.</li>
+          <li>Wait until your IP is approved and you receive a generated key.</li>
+          <li>Paste the key below, copy the keyed loader, then run it in your executor.</li>
+        </ol>
+
+        <div class="copy-row">
+          <input id="user-key" placeholder="Paste generated key here">
+          <button id="copy-keyed-loader" type="button">Copy Keyed Loader</button>
+        </div>
+
+        <textarea id="loader-preview" readonly spellcheck="false"></textarea>
+      </section>
 
       <div class="links compact-links">
         <a href="/api/script">Protected endpoint</a>

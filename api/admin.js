@@ -19,9 +19,19 @@ async function readJson(req) {
 }
 
 function normalizeStateForClient(state) {
+  const requestCounts = state.attempts.reduce((counts, item) => {
+    counts[item.ip] = (counts[item.ip] || 0) + 1;
+    return counts;
+  }, {});
+  const keys = state.keys.map((item) => ({
+    ...item,
+    requestCount: requestCounts[item.ip] || 0
+  }));
+
   return {
     attempts: state.attempts.slice().reverse(),
-    keys: state.keys.slice().reverse()
+    keys: keys.slice().reverse(),
+    approvedUsers: keys.filter((item) => item.active).slice().reverse()
   };
 }
 
@@ -41,6 +51,17 @@ async function handleAdmin(req, res) {
       ...normalizeStateForClient(state),
       hasScript: scriptBody.length > 0,
       scriptLength: scriptBody.length
+    });
+    return;
+  }
+
+  if (req.method === "GET" && action === "script") {
+    const scriptBody = await readScriptBody();
+
+    res.status(200).json({
+      ok: true,
+      script: scriptBody,
+      length: scriptBody.length
     });
     return;
   }
@@ -92,6 +113,28 @@ async function handleAdmin(req, res) {
     record.revokedAt = new Date().toISOString();
     await writeState(state);
     res.status(200).json({ ok: true });
+    return;
+  }
+
+  if (action === "revokeAll") {
+    if (body.confirm !== true) {
+      res.status(400).json({ ok: false, error: "missing revoke-all confirmation" });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    let count = 0;
+
+    for (const record of state.keys) {
+      if (record.active) {
+        record.active = false;
+        record.revokedAt = now;
+        count += 1;
+      }
+    }
+
+    await writeState(state);
+    res.status(200).json({ ok: true, count });
     return;
   }
 

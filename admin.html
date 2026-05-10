@@ -46,13 +46,30 @@
         </section>
 
         <section>
-          <h2>Keys</h2>
-          <div id="keys" class="list"></div>
+          <h2>Approved Users</h2>
+          <div id="approved-users" class="list"></div>
         </section>
       </div>
 
       <section>
-        <h2>Script Body</h2>
+        <div class="section-head">
+          <h2>All Keys</h2>
+          <label class="checkline">
+            <input id="revoke-all-confirm" type="checkbox">
+            Confirm revoke all
+          </label>
+          <button id="revoke-all" type="button" disabled>Revoke All</button>
+        </div>
+        <div class="admin-grid single-grid">
+          <div id="keys" class="list"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>Script Body</h2>
+          <button id="load-script" type="button">Load Stored Script</button>
+        </div>
         <p id="script-state">Not loaded.</p>
         <textarea id="script-body" spellcheck="false" placeholder="Paste obfuscated Lua here."></textarea>
         <div class="copy-row">
