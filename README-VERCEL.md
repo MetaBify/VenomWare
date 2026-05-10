@@ -4,7 +4,7 @@ This repo includes:
 
 - `/api/script`: Lua endpoint used by loaders.
 - `/api/ip`: shows the detected caller IP.
-- `/admin.html`: browser admin panel.
+- `/admin`: browser admin panel.
 - `/api/admin`: admin API used by the panel.
 
 ## Required Vercel Setup
@@ -36,7 +36,7 @@ loadstring(game:HttpGet("https://your-domain.vercel.app/api/script"))()
 ```
 
 2. `/api/script` logs their IP and returns a harmless pending-access Lua response.
-3. You open `/admin.html`, enter `ADMIN_KEY`, and click `Load`.
+3. You open `/admin`, enter `ADMIN_KEY`, and log in.
 4. Click `Approve` next to their IP. The panel generates a key tied to that IP.
 5. Give them this loader:
 
