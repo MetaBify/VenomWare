@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Venom Ware Admin</title>
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <main class="shell admin-shell">
+    <section class="panel admin-panel">
+      <div class="brand">
+        <div class="mark">VW</div>
+        <div>
+          <h1>Admin</h1>
+          <p>Approve IPs, generate keys, and upload the served Lua body.</p>
+        </div>
+      </div>
+
+      <div class="copy-row">
+        <input id="admin-key" placeholder="ADMIN_KEY" type="password">
+        <button id="load-state" type="button">Load</button>
+      </div>
+
+      <div class="admin-grid">
+        <section>
+          <h2>Requests</h2>
+          <div id="attempts" class="list"></div>
+        </section>
+
+        <section>
+          <h2>Keys</h2>
+          <div id="keys" class="list"></div>
+        </section>
+      </div>
+
+      <section>
+        <h2>Script Body</h2>
+        <p id="script-state">Not loaded.</p>
+        <textarea id="script-body" spellcheck="false" placeholder="Paste obfuscated Lua here."></textarea>
+        <div class="copy-row">
+          <input id="generated-key" readonly placeholder="Generated key appears here">
+          <button id="save-script" type="button">Save Script</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/admin.js"></script>
+</body>
+</html>
