@@ -151,6 +151,32 @@ small {
   aspect-ratio: auto;
 }
 
+.login-panel {
+  width: min(560px, 100%);
+  min-height: auto;
+  aspect-ratio: auto;
+}
+
+.login-form,
+.toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.toolbar {
+  grid-template-columns: auto auto;
+  justify-content: end;
+}
+
+.status-text {
+  min-height: 22px;
+}
+
+.is-hidden {
+  display: none;
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

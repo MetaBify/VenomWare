@@ -1,5 +1,10 @@
+const loginPanel = document.querySelector("#login-panel");
+const adminPanel = document.querySelector("#admin-panel");
+const loginForm = document.querySelector("#login-form");
 const keyInput = document.querySelector("#admin-key");
-const loadButton = document.querySelector("#load-state");
+const loginState = document.querySelector("#login-state");
+const refreshButton = document.querySelector("#refresh-state");
+const logoutButton = document.querySelector("#logout-button");
 const saveButton = document.querySelector("#save-script");
 const scriptInput = document.querySelector("#script-body");
 const scriptState = document.querySelector("#script-state");
@@ -7,10 +12,15 @@ const attemptsEl = document.querySelector("#attempts");
 const keysEl = document.querySelector("#keys");
 const generatedKey = document.querySelector("#generated-key");
 
-keyInput.value = sessionStorage.getItem("adminKey") || "";
+let currentAdminKey = sessionStorage.getItem("adminKey") || "";
+
+function setLoggedIn(loggedIn) {
+  loginPanel.classList.toggle("is-hidden", loggedIn);
+  adminPanel.classList.toggle("is-hidden", !loggedIn);
+}
 
 function adminKey() {
-  return keyInput.value.trim();
+  return currentAdminKey;
 }
 
 async function api(action, options = {}) {
@@ -110,7 +120,6 @@ function renderKeys(keys) {
 }
 
 async function loadState() {
-  sessionStorage.setItem("adminKey", adminKey());
   const data = await api("state");
 
   scriptState.textContent = data.hasScript
@@ -119,6 +128,28 @@ async function loadState() {
 
   renderAttempts(data.attempts || []);
   renderKeys(data.keys || []);
+}
+
+async function login(password) {
+  currentAdminKey = password.trim();
+  loginState.textContent = "Checking...";
+
+  await loadState();
+
+  sessionStorage.setItem("adminKey", currentAdminKey);
+  keyInput.value = "";
+  loginState.textContent = "4 failed attempts per IP are allowed each hour.";
+  setLoggedIn(true);
+}
+
+function logout() {
+  currentAdminKey = "";
+  sessionStorage.removeItem("adminKey");
+  generatedKey.value = "";
+  scriptInput.value = "";
+  attemptsEl.replaceChildren();
+  keysEl.replaceChildren();
+  setLoggedIn(false);
 }
 
 async function saveScript() {
@@ -138,14 +169,32 @@ async function saveScript() {
   scriptInput.value = "";
 }
 
-loadButton.addEventListener("click", () => {
+loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  login(keyInput.value).catch((error) => {
+    currentAdminKey = "";
+    sessionStorage.removeItem("adminKey");
+    loginState.textContent = error.message;
+    setLoggedIn(false);
+  });
+});
+
+refreshButton.addEventListener("click", () => {
   loadState().catch((error) => {
     scriptState.textContent = error.message;
   });
 });
+
+logoutButton.addEventListener("click", logout);
 
 saveButton.addEventListener("click", () => {
   saveScript().catch((error) => {
     scriptState.textContent = error.message;
   });
 });
+
+if (currentAdminKey) {
+  login(currentAdminKey).catch(() => logout());
+} else {
+  setLoggedIn(false);
+}

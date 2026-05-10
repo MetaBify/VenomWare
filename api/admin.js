@@ -26,7 +26,7 @@ function normalizeStateForClient(state) {
 }
 
 async function handleAdmin(req, res) {
-  if (!requireAdmin(req, res)) {
+  if (!(await requireAdmin(req, res))) {
     return;
   }
 

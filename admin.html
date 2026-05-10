@@ -8,7 +8,24 @@
 </head>
 <body>
   <main class="shell admin-shell">
-    <section class="panel admin-panel">
+    <section id="login-panel" class="panel login-panel">
+      <div class="brand">
+        <div class="mark">VW</div>
+        <div>
+          <h1>Admin Login</h1>
+          <p>Enter the panel password to manage script access.</p>
+        </div>
+      </div>
+
+      <form id="login-form" class="login-form">
+        <input id="admin-key" placeholder="Password" type="password" autocomplete="current-password">
+        <button id="login-button" type="submit">Login</button>
+      </form>
+
+      <p id="login-state" class="status-text">4 failed attempts per IP are allowed each hour.</p>
+    </section>
+
+    <section id="admin-panel" class="panel admin-panel is-hidden">
       <div class="brand">
         <div class="mark">VW</div>
         <div>
@@ -17,9 +34,9 @@
         </div>
       </div>
 
-      <div class="copy-row">
-        <input id="admin-key" placeholder="ADMIN_KEY" type="password">
-        <button id="load-state" type="button">Load</button>
+      <div class="toolbar">
+        <button id="refresh-state" type="button">Refresh</button>
+        <button id="logout-button" type="button">Logout</button>
       </div>
 
       <div class="admin-grid">

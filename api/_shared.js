@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const STATE_PATH = "venom-host/state.json";
 const SCRIPT_PATH = "venom-host/script.lua";
 const MAX_ATTEMPTS = 250;
+const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
+const ADMIN_LOGIN_WINDOW_MS = 60 * 60 * 1000;
 
 function getClientIp(req) {
   const forwardedFor = req.headers["x-forwarded-for"];
@@ -20,19 +22,57 @@ function getAdminKey(req) {
   return req.headers["x-admin-key"] || req.query.admin_key;
 }
 
-function requireAdmin(req, res) {
+function pruneAdminLogins(state, nowMs) {
+  state.adminLogins = Array.isArray(state.adminLogins) ? state.adminLogins : [];
+  state.adminLogins = state.adminLogins.filter((item) => {
+    const atMs = Date.parse(item.at || "");
+    return Number.isFinite(atMs) && nowMs - atMs <= ADMIN_LOGIN_WINDOW_MS;
+  });
+}
+
+async function requireAdmin(req, res) {
   const expected = process.env.ADMIN_KEY;
   const provided = getAdminKey(req);
+  const ip = getClientIp(req);
 
   if (!expected) {
     res.status(500).json({ ok: false, error: "ADMIN_KEY is not configured" });
     return false;
   }
 
+  const state = await readState();
+  const nowMs = Date.now();
+
+  pruneAdminLogins(state, nowMs);
+
+  const failures = state.adminLogins.filter((item) => item.ip === ip && item.status === "failed").length;
+
+  if (failures >= MAX_ADMIN_LOGIN_ATTEMPTS) {
+    await writeState(state);
+    res.status(429).json({ ok: false, error: "too many admin login attempts, try again later" });
+    return false;
+  }
+
   if (!provided || provided !== expected) {
+    state.adminLogins.push({
+      ip,
+      status: "failed",
+      at: new Date(nowMs).toISOString(),
+      userAgent: req.headers["user-agent"] || ""
+    });
+    await writeState(state);
     res.status(401).json({ ok: false, error: "invalid admin key" });
     return false;
   }
+
+  state.adminLogins = state.adminLogins.filter((item) => item.ip !== ip || item.status !== "failed");
+  state.adminLogins.push({
+    ip,
+    status: "success",
+    at: new Date(nowMs).toISOString(),
+    userAgent: req.headers["user-agent"] || ""
+  });
+  await writeState(state);
 
   return true;
 }
@@ -66,7 +106,8 @@ async function streamToText(stream) {
 function emptyState() {
   return {
     attempts: [],
-    keys: []
+    keys: [],
+    adminLogins: []
   };
 }
 
@@ -112,6 +153,7 @@ async function readState() {
     const state = JSON.parse(text);
     state.attempts = Array.isArray(state.attempts) ? state.attempts : [];
     state.keys = Array.isArray(state.keys) ? state.keys : [];
+    state.adminLogins = Array.isArray(state.adminLogins) ? state.adminLogins : [];
     return state;
   } catch {
     return emptyState();
@@ -121,7 +163,8 @@ async function readState() {
 async function writeState(state) {
   const cleanState = {
     attempts: Array.isArray(state.attempts) ? state.attempts.slice(-MAX_ATTEMPTS) : [],
-    keys: Array.isArray(state.keys) ? state.keys : []
+    keys: Array.isArray(state.keys) ? state.keys : [],
+    adminLogins: Array.isArray(state.adminLogins) ? state.adminLogins.slice(-MAX_ATTEMPTS) : []
   };
 
   await writeTextBlob(STATE_PATH, JSON.stringify(cleanState, null, 2), "application/json; charset=utf-8");
