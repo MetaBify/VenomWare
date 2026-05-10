@@ -77,6 +77,10 @@ p {
   gap: 12px;
 }
 
+.compact-links {
+  margin-top: -8px;
+}
+
 .links a,
 button,
 input {
