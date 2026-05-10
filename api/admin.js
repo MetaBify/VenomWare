@@ -25,10 +25,7 @@ function normalizeStateForClient(state) {
   };
 }
 
-module.exports = async function handler(req, res) {
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-
+async function handleAdmin(req, res) {
   if (!requireAdmin(req, res)) {
     return;
   }
@@ -112,4 +109,19 @@ module.exports = async function handler(req, res) {
   }
 
   res.status(404).json({ ok: false, error: "unknown action" });
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+
+  try {
+    await handleAdmin(req, res);
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error?.message || "server error",
+      name: error?.name || "Error"
+    });
+  }
 };

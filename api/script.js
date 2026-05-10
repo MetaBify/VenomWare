@@ -7,12 +7,9 @@ const {
   writeState
 } = require("./_shared");
 
-module.exports = async function handler(req, res) {
+async function handleScript(req, res) {
   const providedKey = req.query.key || req.headers["x-script-key"];
   const clientIp = getClientIp(req);
-
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
 
   if (!providedKey) {
     await logAttempt(req, "pending");
@@ -53,4 +50,15 @@ module.exports = async function handler(req, res) {
   await writeState(state);
 
   res.status(200).send(body);
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+
+  try {
+    await handleScript(req, res);
+  } catch (error) {
+    res.status(500).send(`-- server error: ${error?.message || "unknown error"}`);
+  }
 };

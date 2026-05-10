@@ -22,7 +22,14 @@ async function api(action, options = {}) {
       ...(options.headers || {})
     }
   });
-  const data = await response.json();
+  const text = await response.text();
+  let data;
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(text || `HTTP ${response.status}`);
+  }
 
   if (!response.ok || !data.ok) {
     throw new Error(data.error || "request failed");
@@ -69,7 +76,7 @@ function renderAttempts(attempts) {
     const el = row(`
       <div>
         <strong>${item.ip}</strong>
-        <small>${item.status} · ${new Date(item.at).toLocaleString()}</small>
+        <small>${item.status} - ${new Date(item.at).toLocaleString()}</small>
       </div>
       <button type="button">Approve</button>
     `);
@@ -90,7 +97,7 @@ function renderKeys(keys) {
     const el = row(`
       <div>
         <strong>${item.ip}</strong>
-        <small>${item.active ? "active" : "revoked"} · uses ${item.uses || 0}</small>
+        <small>${item.active ? "active" : "revoked"} - uses ${item.uses || 0}</small>
         <code>${item.key}</code>
       </div>
       <button type="button">${item.active ? "Revoke" : "Revoked"}</button>
