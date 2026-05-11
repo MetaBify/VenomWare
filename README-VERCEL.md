@@ -11,10 +11,13 @@ This repo includes:
 
 Create a Vercel Blob store for the project. Vercel creates `BLOB_READ_WRITE_TOKEN` automatically when the store is connected.
 
-Set this environment variable:
+Create a Neon Postgres database, then add its connection string to the Vercel project as `DATABASE_URL`.
+
+Set these environment variables:
 
 ```text
 ADMIN_KEY=your_admin_password
+DATABASE_URL=postgresql://...
 ```
 
 Optional fallback script variables:
@@ -23,6 +26,8 @@ Optional fallback script variables:
 SCRIPT_BODY=plain_lua_source
 SCRIPT_BODY_BASE64=base64_lua_source
 ```
+
+The admin panel stores requests, generated keys, approved IPs, revokes, and usage counts in Neon Postgres.
 
 The admin panel stores the real script body in private Vercel Blob storage. Paste the obfuscated Lua there after deployment.
 Saving a new script body overwrites `venom-host/script.lua`, so the previous script is replaced.

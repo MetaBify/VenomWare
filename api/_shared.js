@@ -1,11 +1,13 @@
 const crypto = require("crypto");
 
 const STATE_PATH = "venom-host/state.json";
-const STATE_SNAPSHOT_PREFIX = "venom-host/state-snapshots/";
 const SCRIPT_PATH = "venom-host/script.lua";
 const MAX_ATTEMPTS = 250;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
 const ADMIN_LOGIN_WINDOW_MS = 60 * 60 * 1000;
+
+let dbPoolPromise;
+let dbReadyPromise;
 
 function getClientIp(req) {
   const forwardedFor = req.headers["x-forwarded-for"];
@@ -29,6 +31,87 @@ function pruneAdminLogins(state, nowMs) {
     const atMs = Date.parse(item.at || "");
     return Number.isFinite(atMs) && nowMs - atMs <= ADMIN_LOGIN_WINDOW_MS;
   });
+}
+
+async function getDbPool() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is not configured");
+  }
+
+  if (!dbPoolPromise) {
+    dbPoolPromise = Promise.all([
+      import("@neondatabase/serverless"),
+      import("ws")
+    ]).then(([{ Pool, neonConfig }, wsModule]) => {
+      neonConfig.webSocketConstructor = wsModule.default || wsModule.WebSocket || wsModule;
+      return new Pool({
+        connectionString: process.env.DATABASE_URL
+      });
+    });
+  }
+
+  return dbPoolPromise;
+}
+
+async function dbQuery(text, params) {
+  const pool = await getDbPool();
+  return pool.query(text, params);
+}
+
+async function ensureDb() {
+  if (!dbReadyPromise) {
+    dbReadyPromise = (async () => {
+      await dbQuery(`
+        CREATE TABLE IF NOT EXISTS attempts (
+          id TEXT PRIMARY KEY,
+          ip TEXT NOT NULL,
+          status TEXT NOT NULL,
+          key_hint TEXT DEFAULT '',
+          user_agent TEXT DEFAULT '',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
+      await dbQuery("CREATE INDEX IF NOT EXISTS attempts_created_at_idx ON attempts (created_at)");
+      await dbQuery("CREATE INDEX IF NOT EXISTS attempts_ip_idx ON attempts (ip)");
+      await dbQuery(`
+        CREATE TABLE IF NOT EXISTS access_keys (
+          key TEXT PRIMARY KEY,
+          ip TEXT NOT NULL,
+          note TEXT DEFAULT '',
+          active BOOLEAN NOT NULL DEFAULT true,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          revoked_at TIMESTAMPTZ,
+          last_used_at TIMESTAMPTZ,
+          uses INTEGER NOT NULL DEFAULT 0
+        )
+      `);
+      await dbQuery("CREATE INDEX IF NOT EXISTS access_keys_ip_idx ON access_keys (ip)");
+      await dbQuery(`
+        CREATE TABLE IF NOT EXISTS admin_logins (
+          id TEXT PRIMARY KEY,
+          ip TEXT NOT NULL,
+          status TEXT NOT NULL,
+          user_agent TEXT DEFAULT '',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
+      await dbQuery("CREATE INDEX IF NOT EXISTS admin_logins_ip_created_idx ON admin_logins (ip, created_at)");
+    })().catch((error) => {
+      dbReadyPromise = null;
+      throw error;
+    });
+  }
+
+  return dbReadyPromise;
+}
+
+function toIso(value) {
+  return value ? new Date(value).toISOString() : "";
+}
+
+function toDateOrNull(value) {
+  const date = new Date(value || "");
+  return Number.isFinite(date.getTime()) ? date : null;
 }
 
 async function requireAdmin(req, res) {
@@ -131,29 +214,6 @@ async function readTextBlob(pathname) {
   }
 }
 
-async function listStateSnapshots() {
-  const { list } = await getBlobSdk();
-  const snapshots = [];
-  let cursor;
-
-  do {
-    const result = await list({
-      prefix: STATE_SNAPSHOT_PREFIX,
-      limit: 1000,
-      cursor
-    });
-
-    snapshots.push(...(result.blobs || []));
-    cursor = result.cursor;
-  } while (cursor);
-
-  return snapshots.sort((a, b) => {
-    const aTime = new Date(a.uploadedAt || 0).getTime();
-    const bTime = new Date(b.uploadedAt || 0).getTime();
-    return bTime - aTime || String(b.pathname).localeCompare(String(a.pathname));
-  });
-}
-
 async function writeTextBlob(pathname, body, contentType) {
   const { put } = await getBlobSdk();
 
@@ -167,34 +227,132 @@ async function writeTextBlob(pathname, body, contentType) {
 }
 
 async function readState() {
-  const snapshots = await listStateSnapshots();
-  const latest = snapshots[0];
-  const text = latest ? await readTextBlob(latest.pathname) : await readTextBlob(STATE_PATH);
+  await ensureDb();
 
-  if (!text) {
-    return emptyState();
-  }
+  const [attemptsResult, keysResult, adminLoginsResult] = await Promise.all([
+    dbQuery(`
+      SELECT id, ip, status, key_hint, user_agent, created_at
+      FROM (
+        SELECT id, ip, status, key_hint, user_agent, created_at
+        FROM attempts
+        ORDER BY created_at DESC
+        LIMIT $1
+      ) recent_attempts
+      ORDER BY created_at ASC
+    `, [MAX_ATTEMPTS]),
+    dbQuery(`
+      SELECT key, ip, note, active, created_at, revoked_at, last_used_at, uses
+      FROM access_keys
+      ORDER BY created_at ASC
+    `),
+    dbQuery(`
+      SELECT id, ip, status, user_agent, created_at
+      FROM (
+        SELECT id, ip, status, user_agent, created_at
+        FROM admin_logins
+        ORDER BY created_at DESC
+        LIMIT $1
+      ) recent_logins
+      ORDER BY created_at ASC
+    `, [MAX_ATTEMPTS])
+  ]);
 
-  try {
-    const state = JSON.parse(text);
-    state.attempts = Array.isArray(state.attempts) ? state.attempts : [];
-    state.keys = Array.isArray(state.keys) ? state.keys : [];
-    state.adminLogins = Array.isArray(state.adminLogins) ? state.adminLogins : [];
-    return state;
-  } catch {
-    return emptyState();
-  }
+  return {
+    attempts: attemptsResult.rows.map((item) => ({
+      id: item.id,
+      ip: item.ip,
+      status: item.status,
+      key: item.key_hint || "",
+      userAgent: item.user_agent || "",
+      at: toIso(item.created_at)
+    })),
+    keys: keysResult.rows.map((item) => ({
+      key: item.key,
+      ip: item.ip,
+      note: item.note || "",
+      active: item.active !== false,
+      createdAt: toIso(item.created_at),
+      revokedAt: toIso(item.revoked_at),
+      lastUsedAt: toIso(item.last_used_at),
+      uses: Number(item.uses || 0)
+    })),
+    adminLogins: adminLoginsResult.rows.map((item) => ({
+      id: item.id,
+      ip: item.ip,
+      status: item.status,
+      userAgent: item.user_agent || "",
+      at: toIso(item.created_at)
+    }))
+  };
 }
 
 async function writeState(state) {
+  await ensureDb();
+
   const cleanState = {
     attempts: Array.isArray(state.attempts) ? state.attempts.slice(-MAX_ATTEMPTS) : [],
     keys: Array.isArray(state.keys) ? state.keys : [],
     adminLogins: Array.isArray(state.adminLogins) ? state.adminLogins.slice(-MAX_ATTEMPTS) : []
   };
-  const snapshotPath = `${STATE_SNAPSHOT_PREFIX}${Date.now()}-${crypto.randomUUID()}.json`;
+  const pool = await getDbPool();
+  const client = await pool.connect();
 
-  await writeTextBlob(snapshotPath, JSON.stringify(cleanState, null, 2), "application/json; charset=utf-8");
+  try {
+    await client.query("BEGIN");
+    await client.query("DELETE FROM admin_logins");
+    await client.query("DELETE FROM attempts");
+    await client.query("DELETE FROM access_keys");
+
+    for (const item of cleanState.attempts) {
+      await client.query(`
+        INSERT INTO attempts (id, ip, status, key_hint, user_agent, created_at)
+        VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, now()))
+      `, [
+        item.id || crypto.randomUUID(),
+        String(item.ip || ""),
+        String(item.status || "pending"),
+        String(item.key || ""),
+        String(item.userAgent || ""),
+        toDateOrNull(item.at)
+      ]);
+    }
+
+    for (const item of cleanState.keys) {
+      await client.query(`
+        INSERT INTO access_keys (key, ip, note, active, created_at, revoked_at, last_used_at, uses)
+        VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, now()), $6, $7, $8)
+      `, [
+        String(item.key || ""),
+        String(item.ip || ""),
+        String(item.note || ""),
+        item.active !== false,
+        toDateOrNull(item.createdAt),
+        toDateOrNull(item.revokedAt),
+        toDateOrNull(item.lastUsedAt),
+        Number(item.uses || 0)
+      ]);
+    }
+
+    for (const item of cleanState.adminLogins) {
+      await client.query(`
+        INSERT INTO admin_logins (id, ip, status, user_agent, created_at)
+        VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, now()))
+      `, [
+        item.id || crypto.randomUUID(),
+        String(item.ip || ""),
+        String(item.status || "failed"),
+        String(item.userAgent || ""),
+        toDateOrNull(item.at)
+      ]);
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function logAttempt(req, status, key) {
