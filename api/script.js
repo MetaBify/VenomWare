@@ -1,15 +1,29 @@
 const {
   fakeLua,
   getClientIp,
+  getScriptRateLimit,
   logAttempt,
   readScriptBody,
   readState,
+  recordScriptRequest,
   writeState
 } = require("./_shared");
 
 async function handleScript(req, res) {
   const providedKey = req.query.null || req.headers["x-script-key"];
   const clientIp = getClientIp(req);
+  const rateLimit = await getScriptRateLimit(clientIp);
+
+  res.setHeader("X-RateLimit-Limit", String(rateLimit.limit));
+  res.setHeader("X-RateLimit-Remaining", String(rateLimit.remaining));
+
+  if (rateLimit.count >= rateLimit.limit) {
+    res.status(429).send("-- daily request limit reached");
+    return;
+  }
+
+  await recordScriptRequest(clientIp);
+  res.setHeader("X-RateLimit-Remaining", String(Math.max(0, rateLimit.remaining - 1)));
 
   if (!providedKey) {
     await logAttempt(req, "pending");

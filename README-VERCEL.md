@@ -58,4 +58,5 @@ The landing page also has a small tutorial and a keyed-loader copy box. Paste th
 - Do not commit private scripts into a public GitHub repo.
 - Paste obfuscated code into the admin panel after deploy.
 - A key inside a client loader can be copied, but copied keys only work from the approved IP.
+- `/api/script` is limited to 50 requests per IP in a rolling 24-hour window.
 - Home and mobile IPs can change; if that happens, approve the new IP and revoke the old key.

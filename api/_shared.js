@@ -5,6 +5,8 @@ const SCRIPT_PATH = "venom-host/script.lua";
 const MAX_ATTEMPTS = 250;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
 const ADMIN_LOGIN_WINDOW_MS = 60 * 60 * 1000;
+const SCRIPT_RATE_LIMIT_PER_DAY = 50;
+const SCRIPT_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 let dbPoolPromise;
 let dbReadyPromise;
@@ -74,6 +76,14 @@ async function ensureDb() {
       await dbQuery("CREATE INDEX IF NOT EXISTS attempts_created_at_idx ON attempts (created_at)");
       await dbQuery("CREATE INDEX IF NOT EXISTS attempts_ip_idx ON attempts (ip)");
       await dbQuery(`
+        CREATE TABLE IF NOT EXISTS script_requests (
+          id TEXT PRIMARY KEY,
+          ip TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `);
+      await dbQuery("CREATE INDEX IF NOT EXISTS script_requests_ip_created_idx ON script_requests (ip, created_at)");
+      await dbQuery(`
         CREATE TABLE IF NOT EXISTS access_keys (
           key TEXT PRIMARY KEY,
           ip TEXT NOT NULL,
@@ -103,6 +113,37 @@ async function ensureDb() {
   }
 
   return dbReadyPromise;
+}
+
+async function getScriptRateLimit(ip) {
+  await ensureDb();
+
+  const since = new Date(Date.now() - SCRIPT_RATE_WINDOW_MS);
+  const result = await dbQuery(`
+    SELECT COUNT(*)::int AS count
+    FROM script_requests
+    WHERE ip = $1 AND created_at >= $2
+  `, [ip, since]);
+  const count = Number(result.rows[0]?.count || 0);
+
+  return {
+    count,
+    limit: SCRIPT_RATE_LIMIT_PER_DAY,
+    remaining: Math.max(0, SCRIPT_RATE_LIMIT_PER_DAY - count)
+  };
+}
+
+async function recordScriptRequest(ip) {
+  await ensureDb();
+
+  await dbQuery(`
+    INSERT INTO script_requests (id, ip, created_at)
+    VALUES ($1, $2, now())
+  `, [crypto.randomUUID(), ip]);
+  await dbQuery(`
+    DELETE FROM script_requests
+    WHERE created_at < now() - interval '3 days'
+  `);
 }
 
 function toIso(value) {
@@ -406,8 +447,10 @@ module.exports = {
   fakeLua,
   generateKey,
   getClientIp,
+  getScriptRateLimit,
   readScriptBody,
   readState,
+  recordScriptRequest,
   requireAdmin,
   writeScriptBody,
   writeState,
