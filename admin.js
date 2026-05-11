@@ -67,15 +67,17 @@ async function approveIp(ip) {
 
   generatedKey.value = data.key;
   await navigator.clipboard?.writeText(data.key).catch(() => {});
-  await loadState();
+  renderState(data);
+  scriptState.textContent = `Approved ${data.ip}. Generated key copied if browser allowed it.`;
 }
 
 async function revokeKey(key) {
-  await api("revoke", {
+  const data = await api("revoke", {
     method: "POST",
     body: JSON.stringify({ key })
   });
-  await loadState();
+  renderState(data);
+  scriptState.textContent = "Key revoked.";
 }
 
 async function revokeAllKeys() {
@@ -91,8 +93,8 @@ async function revokeAllKeys() {
 
   revokeAllConfirm.checked = false;
   revokeAllButton.disabled = true;
+  renderState(data);
   scriptState.textContent = `Revoked ${data.count} active key(s).`;
-  await loadState();
 }
 
 function renderAttempts(attempts) {
@@ -153,7 +155,7 @@ function renderApprovedUsers(users) {
       <div>
         <strong>${item.ip}</strong>
         <small>requests ${item.requestCount || 0} - script uses ${item.uses || 0}</small>
-        <code>${item.key}</code>
+        <code>key: ${item.key}</code>
       </div>
       <button type="button">Revoke</button>
     `);
@@ -162,16 +164,21 @@ function renderApprovedUsers(users) {
   }
 }
 
-async function loadState() {
-  const data = await api("state");
-
-  scriptState.textContent = data.hasScript
-    ? `Stored script length: ${data.scriptLength} bytes`
-    : "No script body stored yet.";
+function renderState(data) {
+  if ("hasScript" in data) {
+    scriptState.textContent = data.hasScript
+      ? `Stored script length: ${data.scriptLength} bytes`
+      : "No script body stored yet.";
+  }
 
   renderAttempts(data.attempts || []);
   renderApprovedUsers(data.approvedUsers || []);
   renderKeys(data.keys || []);
+}
+
+async function loadState() {
+  const data = await api("state");
+  renderState(data);
 }
 
 async function login(password) {

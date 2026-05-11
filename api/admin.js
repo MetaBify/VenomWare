@@ -96,7 +96,12 @@ async function handleAdmin(req, res) {
     });
 
     await writeState(state);
-    res.status(200).json({ ok: true, key, ip });
+    res.status(200).json({
+      ok: true,
+      key,
+      ip,
+      ...normalizeStateForClient(state)
+    });
     return;
   }
 
@@ -112,7 +117,10 @@ async function handleAdmin(req, res) {
     record.active = false;
     record.revokedAt = new Date().toISOString();
     await writeState(state);
-    res.status(200).json({ ok: true });
+    res.status(200).json({
+      ok: true,
+      ...normalizeStateForClient(state)
+    });
     return;
   }
 
@@ -134,7 +142,11 @@ async function handleAdmin(req, res) {
     }
 
     await writeState(state);
-    res.status(200).json({ ok: true, count });
+    res.status(200).json({
+      ok: true,
+      count,
+      ...normalizeStateForClient(state)
+    });
     return;
   }
 
