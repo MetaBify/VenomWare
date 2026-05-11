@@ -87,10 +87,6 @@ p {
   gap: 12px;
 }
 
-.compact-links {
-  margin-top: -8px;
-}
-
 .tutorial {
   display: grid;
   gap: 12px;
