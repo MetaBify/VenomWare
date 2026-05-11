@@ -97,12 +97,17 @@ async function revokeAllKeys() {
   scriptState.textContent = `Revoked ${data.count} active key(s).`;
 }
 
-function renderAttempts(attempts) {
+function renderAttempts(attempts, approvedUsers) {
   attemptsEl.replaceChildren();
 
   const pendingByIp = new Map();
+  const approvedIps = new Set((approvedUsers || []).map((item) => item.ip));
 
   for (const item of attempts) {
+    if (approvedIps.has(item.ip)) {
+      continue;
+    }
+
     if (item.status === "pending" && !pendingByIp.has(item.ip)) {
       pendingByIp.set(item.ip, item);
     }
@@ -191,7 +196,7 @@ function renderState(data) {
       : "No script body stored yet.";
   }
 
-  renderAttempts(data.attempts || []);
+  renderAttempts(data.attempts || [], data.approvedUsers || []);
   renderApprovedUsers(data.approvedUsers || []);
   renderKeys(data.keys || []);
 }

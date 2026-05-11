@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 
 const STATE_PATH = "venom-host/state.json";
+const STATE_SNAPSHOT_PREFIX = "venom-host/state-snapshots/";
 const SCRIPT_PATH = "venom-host/script.lua";
 const MAX_ATTEMPTS = 250;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
@@ -130,6 +131,29 @@ async function readTextBlob(pathname) {
   }
 }
 
+async function listStateSnapshots() {
+  const { list } = await getBlobSdk();
+  const snapshots = [];
+  let cursor;
+
+  do {
+    const result = await list({
+      prefix: STATE_SNAPSHOT_PREFIX,
+      limit: 1000,
+      cursor
+    });
+
+    snapshots.push(...(result.blobs || []));
+    cursor = result.cursor;
+  } while (cursor);
+
+  return snapshots.sort((a, b) => {
+    const aTime = new Date(a.uploadedAt || 0).getTime();
+    const bTime = new Date(b.uploadedAt || 0).getTime();
+    return bTime - aTime || String(b.pathname).localeCompare(String(a.pathname));
+  });
+}
+
 async function writeTextBlob(pathname, body, contentType) {
   const { put } = await getBlobSdk();
 
@@ -143,7 +167,9 @@ async function writeTextBlob(pathname, body, contentType) {
 }
 
 async function readState() {
-  const text = await readTextBlob(STATE_PATH);
+  const snapshots = await listStateSnapshots();
+  const latest = snapshots[0];
+  const text = latest ? await readTextBlob(latest.pathname) : await readTextBlob(STATE_PATH);
 
   if (!text) {
     return emptyState();
@@ -166,8 +192,9 @@ async function writeState(state) {
     keys: Array.isArray(state.keys) ? state.keys : [],
     adminLogins: Array.isArray(state.adminLogins) ? state.adminLogins.slice(-MAX_ATTEMPTS) : []
   };
+  const snapshotPath = `${STATE_SNAPSHOT_PREFIX}${Date.now()}-${crypto.randomUUID()}.json`;
 
-  await writeTextBlob(STATE_PATH, JSON.stringify(cleanState, null, 2), "application/json; charset=utf-8");
+  await writeTextBlob(snapshotPath, JSON.stringify(cleanState, null, 2), "application/json; charset=utf-8");
 }
 
 async function logAttempt(req, status, key) {

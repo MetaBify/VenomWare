@@ -82,6 +82,18 @@ async function handleAdmin(req, res) {
       return;
     }
 
+    const existing = state.keys.find((item) => item.ip === ip && item.active);
+
+    if (existing) {
+      res.status(200).json({
+        ok: true,
+        key: existing.key,
+        ip,
+        ...normalizeStateForClient(state)
+      });
+      return;
+    }
+
     const key = generateKey();
     const now = new Date().toISOString();
 
