@@ -76,6 +76,7 @@ async function handleAdmin(req, res) {
 
   if (action === "approve") {
     const ip = String(body.ip || "").trim();
+    const note = String(body.note || "").trim();
 
     if (!ip) {
       res.status(400).json({ ok: false, error: "missing ip" });
@@ -85,6 +86,11 @@ async function handleAdmin(req, res) {
     const existing = state.keys.find((item) => item.ip === ip && item.active);
 
     if (existing) {
+      if (note) {
+        existing.note = note;
+        await writeState(state);
+      }
+
       res.status(200).json({
         ok: true,
         key: existing.key,
@@ -100,7 +106,7 @@ async function handleAdmin(req, res) {
     state.keys.push({
       key,
       ip,
-      note: String(body.note || ""),
+      note,
       active: true,
       createdAt: now,
       lastUsedAt: "",
@@ -112,6 +118,24 @@ async function handleAdmin(req, res) {
       ok: true,
       key,
       ip,
+      ...normalizeStateForClient(state)
+    });
+    return;
+  }
+
+  if (action === "note") {
+    const key = String(body.key || "");
+    const record = state.keys.find((item) => item.key === key);
+
+    if (!record) {
+      res.status(404).json({ ok: false, error: "key not found" });
+      return;
+    }
+
+    record.note = String(body.note || "").trim();
+    await writeState(state);
+    res.status(200).json({
+      ok: true,
       ...normalizeStateForClient(state)
     });
     return;

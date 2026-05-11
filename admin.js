@@ -59,16 +59,35 @@ function row(html) {
   return div;
 }
 
-async function approveIp(ip) {
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function approveIp(ip, note) {
   const data = await api("approve", {
     method: "POST",
-    body: JSON.stringify({ ip })
+    body: JSON.stringify({ ip, note })
   });
 
   generatedKey.value = data.key;
   await navigator.clipboard?.writeText(data.key).catch(() => {});
   renderState(data);
-  scriptState.textContent = `Approved ${data.ip}. Generated key copied if browser allowed it.`;
+  scriptState.textContent = `Approved ${data.ip}${note ? ` for ${note}` : ""}. Generated key copied if browser allowed it.`;
+}
+
+async function saveUsername(key, note) {
+  const data = await api("note", {
+    method: "POST",
+    body: JSON.stringify({ key, note })
+  });
+
+  renderState(data);
+  scriptState.textContent = note ? `Saved username: ${note}.` : "Username cleared.";
 }
 
 async function revokeKey(key) {
@@ -124,14 +143,18 @@ function renderAttempts(attempts, approvedUsers) {
   }
 
   for (const item of pending) {
-    const el = document.createElement("button");
+    const el = document.createElement("div");
     el.className = "pending-row";
-    el.type = "button";
     el.innerHTML = `
-      <span>approve ${item.ip}</span>
-      <small>requested ${new Date(item.at).toLocaleString()}</small>
+      <span class="pending-main">
+        <strong>approve ${escapeHtml(item.ip)}</strong>
+        <small>requested ${new Date(item.at).toLocaleString()}</small>
+      </span>
+      <input class="pending-user" placeholder="username">
+      <button type="button">Approve</button>
     `;
-    el.addEventListener("click", () => approveIp(item.ip));
+    const input = el.querySelector("input");
+    el.querySelector("button").addEventListener("click", () => approveIp(item.ip, input.value.trim()));
     attemptsEl.append(el);
   }
 }
@@ -147,9 +170,10 @@ function renderKeys(keys) {
   for (const item of keys) {
     const el = row(`
       <div>
-        <strong>${item.ip}</strong>
+        <strong>${escapeHtml(item.note || "No username")}</strong>
+        <small>${escapeHtml(item.ip)}</small>
         <small>${item.active ? "active" : "revoked"} - uses ${item.uses || 0}</small>
-        <code>${item.key}</code>
+        <code>${escapeHtml(item.key)}</code>
       </div>
       <button type="button">${item.active ? "Revoke" : "Revoked"}</button>
     `);
@@ -175,16 +199,22 @@ function renderApprovedUsers(users) {
     const el = document.createElement("div");
     el.className = "approved-row";
     el.innerHTML = `
-        <span class="approved-ip">${item.ip}</span>
-        <code>${item.key}</code>
+        <input class="approved-user-input" value="${escapeHtml(item.note || "")}" placeholder="username">
+        <span class="approved-ip">${escapeHtml(item.ip)}</span>
+        <code>${escapeHtml(item.key)}</code>
         <span class="approved-stats">
           req ${item.requestCount || 0} / use ${item.uses || 0}
           <small>approved ${new Date(item.createdAt).toLocaleString()}</small>
           ${item.lastUsedAt ? `<small>last use ${new Date(item.lastUsedAt).toLocaleString()}</small>` : ""}
         </span>
-      <button type="button">revoke whitelist</button>
+        <span class="approved-actions">
+          <button class="save-user" type="button">save user</button>
+          <button class="revoke-user" type="button">revoke whitelist</button>
+        </span>
     `;
-    el.querySelector("button").addEventListener("click", () => revokeKey(item.key));
+    const input = el.querySelector(".approved-user-input");
+    el.querySelector(".save-user").addEventListener("click", () => saveUsername(item.key, input.value.trim()));
+    el.querySelector(".revoke-user").addEventListener("click", () => revokeKey(item.key));
     approvedUsersEl.append(el);
   }
 }

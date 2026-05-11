@@ -253,10 +253,10 @@ small {
   width: 100%;
   min-height: 40px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 220px) auto;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
+  padding: 8px 12px;
   border: 1px solid rgba(255, 184, 82, 0.32);
   border-radius: 8px;
   color: #f4e8d6;
@@ -266,14 +266,25 @@ small {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
+.pending-main {
+  display: grid;
+  gap: 2px;
+}
+
 .pending-row small {
   color: #d7bea0;
+}
+
+.pending-user,
+.approved-user-input {
+  min-height: 34px;
+  border-radius: 8px;
 }
 
 .approved-header,
 .approved-row {
   display: grid;
-  grid-template-columns: minmax(120px, 0.7fr) minmax(180px, 1.4fr) minmax(120px, 0.8fr) auto;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(110px, 0.7fr) minmax(180px, 1.2fr) minmax(120px, 0.8fr) auto;
   align-items: center;
   gap: 10px;
 }
@@ -316,6 +327,13 @@ small {
   text-align: right;
 }
 
+.approved-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .approved-ip {
   font-size: 20px;
   font-weight: 700;
@@ -331,6 +349,7 @@ small {
 }
 
 .empty-row {
+  grid-column: 1 / -1;
   color: #d7bea0;
   background: rgba(19, 13, 9, 0.58);
 }
