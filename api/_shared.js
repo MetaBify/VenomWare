@@ -5,7 +5,7 @@ const SCRIPT_PATH = "venom-host/script.lua";
 const MAX_ATTEMPTS = 250;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
 const ADMIN_LOGIN_WINDOW_MS = 60 * 60 * 1000;
-const SCRIPT_RATE_LIMIT_PER_DAY = 50;
+const SCRIPT_RATE_LIMIT_PER_DAY = 67;
 const SCRIPT_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 let dbPoolPromise;
