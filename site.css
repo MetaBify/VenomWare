@@ -244,6 +244,11 @@ small {
 .approved-stack {
   display: grid;
   gap: 8px;
+  max-height: 168px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(255, 255, 255, 0.72) rgba(0, 0, 0, 0.12);
+  scrollbar-width: thin;
 }
 
 .pending-row {
@@ -282,7 +287,7 @@ small {
 }
 
 .approved-row {
-  min-height: 34px;
+  min-height: 48px;
   padding: 0 8px 0 18px;
   border-radius: 6px;
   color: #ffffff;
@@ -318,6 +323,11 @@ small {
 
 .approved-stats {
   color: #ffffff;
+}
+
+.approved-stats small {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 11px;
 }
 
 .empty-row {

@@ -124,7 +124,7 @@ function renderAttempts(attempts) {
     el.type = "button";
     el.innerHTML = `
       <span>approve ${item.ip}</span>
-      <small>${new Date(item.at).toLocaleString()}</small>
+      <small>requested ${new Date(item.at).toLocaleString()}</small>
     `;
     el.addEventListener("click", () => approveIp(item.ip));
     attemptsEl.append(el);
@@ -170,9 +170,13 @@ function renderApprovedUsers(users) {
     const el = document.createElement("div");
     el.className = "approved-row";
     el.innerHTML = `
-      <span class="approved-ip">${item.ip}</span>
-      <code>${item.key}</code>
-      <span class="approved-stats">req ${item.requestCount || 0} / use ${item.uses || 0}</span>
+        <span class="approved-ip">${item.ip}</span>
+        <code>${item.key}</code>
+        <span class="approved-stats">
+          req ${item.requestCount || 0} / use ${item.uses || 0}
+          <small>approved ${new Date(item.createdAt).toLocaleString()}</small>
+          ${item.lastUsedAt ? `<small>last use ${new Date(item.lastUsedAt).toLocaleString()}</small>` : ""}
+        </span>
       <button type="button">revoke whitelist</button>
     `;
     el.querySelector("button").addEventListener("click", () => revokeKey(item.key));
