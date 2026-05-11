@@ -213,31 +213,33 @@ small {
   gap: 14px;
   padding: 28px;
   border-radius: 10px;
-  background: #ff6b00;
-  border: 1px solid #ff9b3a;
-  box-shadow: 0 0 24px rgba(255, 107, 0, 0.22);
+  background: rgba(19, 13, 9, 0.72);
+  border: 1px solid rgba(255, 184, 82, 0.36);
+  box-shadow: 0 0 24px rgba(255, 157, 63, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .pending-box,
 .approved-box {
   display: grid;
   gap: 8px;
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
 }
 
 .pending-box {
-  background: #02c7f2;
+  background: rgba(54, 35, 24, 0.72);
+  border: 1px solid rgba(255, 184, 82, 0.22);
 }
 
 .approved-box {
-  background: #caff88;
+  background: rgba(30, 20, 14, 0.76);
+  border: 1px solid rgba(255, 184, 82, 0.22);
 }
 
 .pending-box h2,
 .approved-box h2 {
   margin: 0;
-  color: #1b1009;
+  color: #f4e8d6;
 }
 
 .request-stack,
@@ -247,7 +249,7 @@ small {
   max-height: 168px;
   overflow-y: auto;
   padding-right: 4px;
-  scrollbar-color: rgba(255, 255, 255, 0.72) rgba(0, 0, 0, 0.12);
+  scrollbar-color: rgba(255, 184, 82, 0.58) rgba(0, 0, 0, 0.12);
   scrollbar-width: thin;
 }
 
@@ -258,18 +260,18 @@ small {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 0 18px;
-  border: 0;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 184, 82, 0.32);
   border-radius: 8px;
-  color: #ffffff;
-  background: #70ff00;
+  color: #f4e8d6;
+  background: rgba(99, 62, 34, 0.7);
   text-align: left;
-  font-size: 20px;
-  box-shadow: none;
+  font-size: 18px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .pending-row small {
-  color: rgba(255, 255, 255, 0.86);
+  color: #d7bea0;
 }
 
 .approved-header,
@@ -281,7 +283,7 @@ small {
 }
 
 .approved-header {
-  color: #3d2c28;
+  color: #d7bea0;
   font-weight: 800;
   padding: 0 12px;
 }
@@ -290,13 +292,14 @@ small {
   min-height: 48px;
   padding: 0 8px 0 18px;
   border-radius: 6px;
-  color: #ffffff;
-  background: #9d87f7;
+  color: #f4e8d6;
+  background: rgba(78, 49, 30, 0.76);
+  border: 1px solid rgba(255, 184, 82, 0.26);
 }
 
 .approved-row code,
 .approved-row small {
-  color: #ffffff;
+  color: #d7bea0;
 }
 
 .approved-row code {
@@ -308,9 +311,10 @@ small {
 .approved-row button {
   min-height: 28px;
   padding: 0 12px;
-  border: 0;
-  color: #ffffff;
-  background: transparent;
+  border: 1px solid rgba(255, 184, 82, 0.3);
+  border-radius: 8px;
+  color: #f4e8d6;
+  background: rgba(54, 35, 24, 0.78);
   font-size: 16px;
   font-weight: 700;
   text-align: right;
@@ -322,17 +326,17 @@ small {
 }
 
 .approved-stats {
-  color: #ffffff;
+  color: #f4e8d6;
 }
 
 .approved-stats small {
-  color: rgba(255, 255, 255, 0.84);
+  color: #d7bea0;
   font-size: 11px;
 }
 
 .empty-row {
-  color: #312015;
-  background: rgba(255, 255, 255, 0.58);
+  color: #d7bea0;
+  background: rgba(19, 13, 9, 0.58);
 }
 
 .list {
