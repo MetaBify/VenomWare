@@ -46,7 +46,7 @@ loadstring(game:HttpGet("https://your-domain.vercel.app/api/script"))()
 5. Give them this loader:
 
 ```lua
-loadstring(game:HttpGet("https://your-domain.vercel.app/api/script?key=GENERATED_KEY"))()
+loadstring(game:HttpGet("https://your-domain.vercel.app/api/script?null=GENERATED_KEY"))()
 ```
 
 The generated key only works from the approved IP.

@@ -8,7 +8,7 @@ function endpointUrl(key) {
   const url = new URL("/api/script", window.location.origin);
 
   if (key) {
-    url.searchParams.set("key", key);
+    url.searchParams.set("null", key);
   }
 
   return url.toString();

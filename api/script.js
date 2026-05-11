@@ -8,7 +8,7 @@ const {
 } = require("./_shared");
 
 async function handleScript(req, res) {
-  const providedKey = req.query.key || req.headers["x-script-key"];
+  const providedKey = req.query.null || req.headers["x-script-key"];
   const clientIp = getClientIp(req);
 
   if (!providedKey) {
