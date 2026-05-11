@@ -41,17 +41,23 @@
         <button id="logout-button" type="button">Logout</button>
       </div>
 
-      <div class="admin-grid">
-        <section>
-          <h2>Requests</h2>
-          <div id="attempts" class="list"></div>
-        </section>
+      <section class="whitelist-board">
+        <div class="pending-box">
+          <h2>Pending Requests</h2>
+          <div id="attempts" class="request-stack"></div>
+        </div>
 
-        <section>
-          <h2>Approved Users</h2>
-          <div id="approved-users" class="list"></div>
-        </section>
-      </div>
+        <div class="approved-box">
+          <h2>Approved Whitelist</h2>
+          <div class="approved-header">
+            <span>IP</span>
+            <span>Key</span>
+            <span>Stats</span>
+            <span>Action</span>
+          </div>
+          <div id="approved-users" class="approved-stack"></div>
+        </div>
+      </section>
 
       <section>
         <div class="section-head">

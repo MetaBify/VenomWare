@@ -100,20 +100,33 @@ async function revokeAllKeys() {
 function renderAttempts(attempts) {
   attemptsEl.replaceChildren();
 
-  if (!attempts.length) {
-    attemptsEl.append(row("<span>No requests yet.</span>"));
+  const pendingByIp = new Map();
+
+  for (const item of attempts) {
+    if (item.status === "pending" && !pendingByIp.has(item.ip)) {
+      pendingByIp.set(item.ip, item);
+    }
+  }
+
+  const pending = [...pendingByIp.values()];
+
+  if (!pending.length) {
+    const empty = document.createElement("div");
+    empty.className = "pending-row empty-row";
+    empty.textContent = "No pending IPs.";
+    attemptsEl.append(empty);
     return;
   }
 
-  for (const item of attempts) {
-    const el = row(`
-      <div>
-        <strong>${item.ip}</strong>
-        <small>${item.status} - ${new Date(item.at).toLocaleString()}</small>
-      </div>
-      <button type="button">Approve</button>
-    `);
-    el.querySelector("button").addEventListener("click", () => approveIp(item.ip));
+  for (const item of pending) {
+    const el = document.createElement("button");
+    el.className = "pending-row";
+    el.type = "button";
+    el.innerHTML = `
+      <span>approve ${item.ip}</span>
+      <small>${new Date(item.at).toLocaleString()}</small>
+    `;
+    el.addEventListener("click", () => approveIp(item.ip));
     attemptsEl.append(el);
   }
 }
@@ -146,19 +159,22 @@ function renderApprovedUsers(users) {
   approvedUsersEl.replaceChildren();
 
   if (!users.length) {
-    approvedUsersEl.append(row("<span>No approved users yet.</span>"));
+    const empty = document.createElement("div");
+    empty.className = "approved-row empty-row";
+    empty.textContent = "No approved users yet.";
+    approvedUsersEl.append(empty);
     return;
   }
 
   for (const item of users) {
-    const el = row(`
-      <div>
-        <strong>${item.ip}</strong>
-        <small>requests ${item.requestCount || 0} - script uses ${item.uses || 0}</small>
-        <code>key: ${item.key}</code>
-      </div>
-      <button type="button">Revoke</button>
-    `);
+    const el = document.createElement("div");
+    el.className = "approved-row";
+    el.innerHTML = `
+      <span class="approved-ip">${item.ip}</span>
+      <code>${item.key}</code>
+      <span class="approved-stats">req ${item.requestCount || 0} / use ${item.uses || 0}</span>
+      <button type="button">revoke whitelist</button>
+    `;
     el.querySelector("button").addEventListener("click", () => revokeKey(item.key));
     approvedUsersEl.append(el);
   }

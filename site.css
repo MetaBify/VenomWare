@@ -208,6 +208,123 @@ small {
   gap: 18px;
 }
 
+.whitelist-board {
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border-radius: 10px;
+  background: #ff6b00;
+  border: 1px solid #ff9b3a;
+  box-shadow: 0 0 24px rgba(255, 107, 0, 0.22);
+}
+
+.pending-box,
+.approved-box {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.pending-box {
+  background: #02c7f2;
+}
+
+.approved-box {
+  background: #caff88;
+}
+
+.pending-box h2,
+.approved-box h2 {
+  margin: 0;
+  color: #1b1009;
+}
+
+.request-stack,
+.approved-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.pending-row {
+  width: 100%;
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #70ff00;
+  text-align: left;
+  font-size: 20px;
+  box-shadow: none;
+}
+
+.pending-row small {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.approved-header,
+.approved-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(180px, 1.4fr) minmax(120px, 0.8fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.approved-header {
+  color: #3d2c28;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.approved-row {
+  min-height: 34px;
+  padding: 0 8px 0 18px;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #9d87f7;
+}
+
+.approved-row code,
+.approved-row small {
+  color: #ffffff;
+}
+
+.approved-row code {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.approved-row button {
+  min-height: 28px;
+  padding: 0 12px;
+  border: 0;
+  color: #ffffff;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.approved-ip {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.approved-stats {
+  color: #ffffff;
+}
+
+.empty-row {
+  color: #312015;
+  background: rgba(255, 255, 255, 0.58);
+}
+
 .list {
   display: grid;
   gap: 8px;
@@ -276,6 +393,9 @@ textarea {
   }
 
   .admin-grid,
+  .approved-header,
+  .approved-row,
+  .pending-row,
   .section-head,
   .links,
   .copy-row {
