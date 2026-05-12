@@ -68,6 +68,43 @@ function row(html) {
   return div;
 }
 
+async function copyText(value, button) {
+  const original = button.textContent;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.append(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
+    button.textContent = "copied";
+  } catch {
+    button.textContent = "copy failed";
+  }
+
+  window.setTimeout(() => {
+    button.textContent = original;
+  }, 1200);
+}
+
+function keyBox(key) {
+  return `
+    <span class="key-box">
+      <code>${escapeHtml(key)}</code>
+      <button class="copy-key" type="button">copy</button>
+    </span>
+  `;
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replaceAll("&", "&amp;")
@@ -178,15 +215,17 @@ function renderKeys(keys) {
 
   for (const item of keys) {
     const el = row(`
-      <div>
+      <div class="key-meta">
         <strong>${escapeHtml(item.note || "No username")}</strong>
         <small>${escapeHtml(item.ip)}</small>
         <small>${item.active ? "active" : "revoked"} - uses ${item.uses || 0}</small>
-        <code>${escapeHtml(item.key)}</code>
+        ${keyBox(item.key)}
       </div>
       <button type="button">${item.active ? "Revoke" : "Revoked"}</button>
     `);
-    const button = el.querySelector("button");
+    el.classList.add("key-row");
+    const button = el.querySelector(":scope > button");
+    el.querySelector(".copy-key").addEventListener("click", () => copyText(item.key, el.querySelector(".copy-key")));
     button.disabled = !item.active;
     button.addEventListener("click", () => revokeKey(item.key));
     keysEl.append(el);
@@ -210,7 +249,7 @@ function renderApprovedUsers(users) {
     el.innerHTML = `
         <input class="approved-user-input" value="${escapeHtml(item.note || "")}" placeholder="username">
         <span class="approved-ip">${escapeHtml(item.ip)}</span>
-        <code>${escapeHtml(item.key)}</code>
+        ${keyBox(item.key)}
         <span class="approved-stats">
           req ${item.requestCount || 0} / use ${item.uses || 0}
           <small>approved ${new Date(item.createdAt).toLocaleString()}</small>
@@ -222,6 +261,7 @@ function renderApprovedUsers(users) {
         </span>
     `;
     const input = el.querySelector(".approved-user-input");
+    el.querySelector(".copy-key").addEventListener("click", () => copyText(item.key, el.querySelector(".copy-key")));
     el.querySelector(".save-user").addEventListener("click", () => saveUsername(item.key, input.value.trim()));
     el.querySelector(".revoke-user").addEventListener("click", () => revokeKey(item.key));
     approvedUsersEl.append(el);

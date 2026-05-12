@@ -14,8 +14,16 @@ function endpointUrl(key) {
   return url.toString();
 }
 
+function verifyUrl() {
+  return new URL("/api/verify", window.location.origin).toString();
+}
+
+function luaString(value) {
+  return JSON.stringify(String(value || ""));
+}
+
 function loaderFor(key) {
-  return `loadstring(game:HttpGet("${endpointUrl(key)}"))()`;
+  return `getgenv().key=${luaString(key)};getgenv().venom_auth_verify_url=${luaString(verifyUrl())};loadstring(game:HttpGet(${luaString(endpointUrl(key))}))()`;
 }
 
 function updatePreview() {

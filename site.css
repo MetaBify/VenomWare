@@ -242,7 +242,7 @@ small {
 .approved-stack {
   display: grid;
   gap: 8px;
-  max-height: 168px;
+  max-height: min(44vh, 420px);
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-color: rgba(255, 184, 82, 0.58) rgba(0, 0, 0, 0.12);
@@ -284,8 +284,8 @@ small {
 .approved-header,
 .approved-row {
   display: grid;
-  grid-template-columns: minmax(130px, 0.8fr) minmax(110px, 0.7fr) minmax(180px, 1.2fr) minmax(120px, 0.8fr) auto;
-  align-items: center;
+  grid-template-columns: minmax(120px, 0.75fr) minmax(110px, 0.65fr) minmax(260px, 1.6fr) minmax(130px, 0.8fr) auto;
+  align-items: start;
   gap: 10px;
 }
 
@@ -296,23 +296,16 @@ small {
 }
 
 .approved-row {
-  min-height: 48px;
-  padding: 0 8px 0 18px;
+  min-height: 58px;
+  padding: 10px;
   border-radius: 6px;
   color: #f4e8d6;
   background: rgba(78, 49, 30, 0.76);
   border: 1px solid rgba(255, 184, 82, 0.26);
 }
 
-.approved-row code,
 .approved-row small {
   color: #d7bea0;
-}
-
-.approved-row code {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .approved-row button {
@@ -341,6 +334,7 @@ small {
 
 .approved-stats {
   color: #f4e8d6;
+  min-width: 0;
 }
 
 .approved-stats small {
@@ -357,7 +351,7 @@ small {
 .list {
   display: grid;
   gap: 8px;
-  max-height: 320px;
+  max-height: min(58vh, 620px);
   overflow: auto;
   padding-right: 4px;
 }
@@ -365,13 +359,56 @@ small {
 .list-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   gap: 10px;
   min-height: 54px;
   padding: 10px;
   border: 1px solid rgba(255, 184, 82, 0.28);
   border-radius: 10px;
   background: rgba(19, 13, 9, 0.72);
+}
+
+.key-row {
+  min-height: 86px;
+}
+
+.key-meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.key-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(255, 184, 82, 0.28);
+  border-radius: 8px;
+  background: rgba(19, 13, 9, 0.58);
+}
+
+.key-box code {
+  display: block;
+  min-width: 0;
+  max-height: 54px;
+  overflow: auto;
+  color: #d7bea0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  user-select: all;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.key-box .copy-key {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 textarea {
