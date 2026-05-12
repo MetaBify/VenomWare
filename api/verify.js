@@ -1,9 +1,37 @@
+const crypto = require("crypto");
+
 const {
   getClientIp,
   logAttempt,
   readState,
   writeState
 } = require("./_shared");
+
+const TOKEN_TTL_SECONDS = 180;
+const SIGN_A = "vw-session-a:7c2f2d91";
+const SIGN_B = "vw-session-b:51a89e04";
+
+function authSignature(...parts) {
+  const input = `${SIGN_A}|${parts.map((part) => String(part || "")).join("|")}|${SIGN_B}`;
+  let hash = 2166136261 % 2147483647;
+
+  for (let index = 0; index < input.length; index += 1) {
+    const code = input.charCodeAt(index);
+    hash = (hash + code * ((index % 251) + 1) + SIGN_B.charCodeAt(index % SIGN_B.length)) % 2147483647;
+    hash = (hash * 131 + index * 17 + 97) % 2147483647;
+  }
+
+  return Math.floor(hash).toString(16).padStart(8, "0");
+}
+
+function issueToken(key) {
+  const issued = Math.floor(Date.now() / 1000);
+  const expires = issued + TOKEN_TTL_SECONDS;
+  const nonce = crypto.randomBytes(12).toString("base64url");
+  const signature = authSignature(key, issued, expires, nonce);
+
+  return `VW1:${issued}:${expires}:${nonce}:${signature}`;
+}
 
 async function handleVerify(req, res) {
   const providedKey = String(req.query.key || req.headers["x-script-key"] || "").trim();
@@ -39,7 +67,7 @@ async function handleVerify(req, res) {
   record.lastUsedAt = new Date().toISOString();
   await writeState(state);
 
-  res.status(200).send(`ALLOW:${clientIp}`);
+  res.status(200).send(issueToken(providedKey));
 }
 
 module.exports = async function handler(req, res) {
