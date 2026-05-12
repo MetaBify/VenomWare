@@ -1,1 +1,6 @@
 venom-host/
+obfuscator/
+libs/
+*.lua
+*.local-before-pull
+*.before-feature-removal.*.lua

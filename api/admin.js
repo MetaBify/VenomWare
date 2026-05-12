@@ -1,8 +1,10 @@
 const {
   generateKey,
+  readFreeScriptBody,
   readScriptBody,
   readState,
   requireAdmin,
+  writeFreeScriptBody,
   writeScriptBody,
   writeState
 } = require("./_shared");
@@ -45,12 +47,15 @@ async function handleAdmin(req, res) {
   if (req.method === "GET" && action === "state") {
     const state = await readState();
     const scriptBody = await readScriptBody();
+    const freeScriptBody = await readFreeScriptBody();
 
     res.status(200).json({
       ok: true,
       ...normalizeStateForClient(state),
       hasScript: scriptBody.length > 0,
-      scriptLength: scriptBody.length
+      scriptLength: scriptBody.length,
+      hasFreeScript: freeScriptBody.length > 0,
+      freeScriptLength: freeScriptBody.length
     });
     return;
   }
@@ -62,6 +67,17 @@ async function handleAdmin(req, res) {
       ok: true,
       script: scriptBody,
       length: scriptBody.length
+    });
+    return;
+  }
+
+  if (req.method === "GET" && action === "freeScript") {
+    const freeScriptBody = await readFreeScriptBody();
+
+    res.status(200).json({
+      ok: true,
+      script: freeScriptBody,
+      length: freeScriptBody.length
     });
     return;
   }
@@ -195,6 +211,19 @@ async function handleAdmin(req, res) {
     }
 
     await writeScriptBody(script);
+    res.status(200).json({ ok: true, length: script.length });
+    return;
+  }
+
+  if (action === "freeScript") {
+    const script = String(body.script || "");
+
+    if (!script.trim()) {
+      res.status(400).json({ ok: false, error: "missing free script" });
+      return;
+    }
+
+    await writeFreeScriptBody(script);
     res.status(200).json({ ok: true, length: script.length });
     return;
   }

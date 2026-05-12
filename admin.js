@@ -7,10 +7,15 @@ const refreshButton = document.querySelector("#refresh-state");
 const logoutButton = document.querySelector("#logout-button");
 const saveButton = document.querySelector("#save-script");
 const loadScriptButton = document.querySelector("#load-script");
+const saveFreeButton = document.querySelector("#save-free-script");
+const loadFreeScriptButton = document.querySelector("#load-free-script");
 const revokeAllButton = document.querySelector("#revoke-all");
 const revokeAllConfirm = document.querySelector("#revoke-all-confirm");
 const scriptInput = document.querySelector("#script-body");
 const scriptState = document.querySelector("#script-state");
+const freeScriptInput = document.querySelector("#free-script-body");
+const freeScriptState = document.querySelector("#free-script-state");
+const freeLoader = document.querySelector("#free-loader");
 const attemptsEl = document.querySelector("#attempts");
 const keysEl = document.querySelector("#keys");
 const approvedUsersEl = document.querySelector("#approved-users");
@@ -25,6 +30,10 @@ function setLoggedIn(loggedIn) {
 
 function adminKey() {
   return currentAdminKey;
+}
+
+function freeLoaderText() {
+  return `loadstring(game:HttpGet("${new URL("/api/free", window.location.origin).toString()}"))()`;
 }
 
 async function api(action, options = {}) {
@@ -227,6 +236,11 @@ function renderState(data) {
   }
 
   renderAttempts(data.attempts || [], data.approvedUsers || []);
+  freeScriptState.textContent = data.hasFreeScript
+    ? `Stored free script length: ${data.freeScriptLength} bytes`
+    : "No free script body stored yet.";
+  freeLoader.value = freeLoaderText();
+
   renderApprovedUsers(data.approvedUsers || []);
   renderKeys(data.keys || []);
 }
@@ -253,6 +267,8 @@ function logout() {
   sessionStorage.removeItem("adminKey");
   generatedKey.value = "";
   scriptInput.value = "";
+  freeScriptInput.value = "";
+  freeLoader.value = "";
   attemptsEl.replaceChildren();
   keysEl.replaceChildren();
   approvedUsersEl.replaceChildren();
@@ -270,6 +286,16 @@ async function loadStoredScript() {
     : "No stored script body yet.";
 }
 
+async function loadStoredFreeScript() {
+  const data = await api("freeScript");
+
+  freeScriptInput.value = data.script || "";
+  freeScriptState.textContent = data.length
+    ? `Loaded free script length: ${data.length} bytes`
+    : "No free script body yet.";
+  freeLoader.value = freeLoaderText();
+}
+
 async function saveScript() {
   const script = scriptInput.value;
 
@@ -285,6 +311,24 @@ async function saveScript() {
 
   scriptState.textContent = `Saved script length: ${data.length} bytes. Previous script was replaced.`;
   scriptInput.value = "";
+}
+
+async function saveFreeScript() {
+  const script = freeScriptInput.value;
+
+  if (!script.trim()) {
+    freeScriptState.textContent = "Paste free script body before saving.";
+    return;
+  }
+
+  const data = await api("freeScript", {
+    method: "POST",
+    body: JSON.stringify({ script })
+  });
+
+  freeScriptState.textContent = `Saved free script length: ${data.length} bytes. Public endpoint was replaced.`;
+  freeLoader.value = freeLoaderText();
+  freeScriptInput.value = "";
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -314,6 +358,18 @@ saveButton.addEventListener("click", () => {
 loadScriptButton.addEventListener("click", () => {
   loadStoredScript().catch((error) => {
     scriptState.textContent = error.message;
+  });
+});
+
+saveFreeButton.addEventListener("click", () => {
+  saveFreeScript().catch((error) => {
+    freeScriptState.textContent = error.message;
+  });
+});
+
+loadFreeScriptButton.addEventListener("click", () => {
+  loadStoredFreeScript().catch((error) => {
+    freeScriptState.textContent = error.message;
   });
 });
 

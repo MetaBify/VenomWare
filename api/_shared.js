@@ -2,6 +2,7 @@ const crypto = require("crypto");
 
 const STATE_PATH = "venom-host/state.json";
 const SCRIPT_PATH = "venom-host/script.lua";
+const FREE_SCRIPT_PATH = "venom-host/free-script.lua";
 const MAX_ATTEMPTS = 250;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
 const ADMIN_LOGIN_WINDOW_MS = 60 * 60 * 1000;
@@ -432,6 +433,24 @@ async function writeScriptBody(body) {
   await writeTextBlob(SCRIPT_PATH, body, "text/plain; charset=utf-8");
 }
 
+async function readFreeScriptBody() {
+  const blobBody = await readTextBlob(FREE_SCRIPT_PATH);
+
+  if (blobBody) {
+    return blobBody;
+  }
+
+  if (process.env.FREE_SCRIPT_BODY_BASE64) {
+    return Buffer.from(process.env.FREE_SCRIPT_BODY_BASE64, "base64").toString("utf8");
+  }
+
+  return process.env.FREE_SCRIPT_BODY || "";
+}
+
+async function writeFreeScriptBody(body) {
+  await writeTextBlob(FREE_SCRIPT_PATH, body, "text/plain; charset=utf-8");
+}
+
 function fakeLua(ip) {
   const message = `Venom Ware: access pending for IP ${ip}. Contact admin for approval.`;
 
@@ -442,16 +461,19 @@ function fakeLua(ip) {
 }
 
 module.exports = {
+  FREE_SCRIPT_PATH,
   SCRIPT_PATH,
   STATE_PATH,
   fakeLua,
   generateKey,
   getClientIp,
   getScriptRateLimit,
+  readFreeScriptBody,
   readScriptBody,
   readState,
   recordScriptRequest,
   requireAdmin,
+  writeFreeScriptBody,
   writeScriptBody,
   writeState,
   logAttempt
