@@ -1,5 +1,3 @@
-const rawInput = document.querySelector("#raw-url");
-const copyFirstButton = document.querySelector("#copy-url");
 const keyInput = document.querySelector("#user-key");
 const copyKeyedButton = document.querySelector("#copy-keyed-loader");
 const loaderPreview = document.querySelector("#loader-preview");
@@ -28,7 +26,6 @@ function loaderFor(key) {
 
 function updatePreview() {
   const key = keyInput.value.trim();
-  rawInput.value = loaderFor("");
   loaderPreview.value = loaderFor(key || "YOUR_KEY");
 }
 
@@ -41,10 +38,6 @@ async function copyText(text, button) {
     button.textContent = original;
   }, 1200);
 }
-
-copyFirstButton.addEventListener("click", () => {
-  copyText(loaderFor(""), copyFirstButton);
-});
 
 copyKeyedButton.addEventListener("click", () => {
   copyText(loaderFor(keyInput.value.trim() || "YOUR_KEY"), copyKeyedButton);

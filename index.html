@@ -18,18 +18,15 @@
         </div>
       </div>
 
-      <div class="copy-row">
-        <input id="raw-url" value="/api/script" readonly>
-        <button id="copy-url" type="button">Copy First Loader</button>
-      </div>
-
       <section class="tutorial">
         <h2>How to use</h2>
         <ol>
-          <li>Run the first loader in your executor. It registers your IP and shows pending access.</li>
-          <li>Wait until your IP is approved and you receive a generated key.</li>
-          <li>Paste the key below, copy the keyed loader, then run it in your executor.</li>
+          <li>Click Generate Key With Discord and authorize your Discord account.</li>
+          <li>If you have the required role, your key and loader will appear.</li>
+          <li>Paste the key below only if you want to rebuild the loader later.</li>
         </ol>
+
+        <a class="button-link discord-link" href="/api/discord-login">Generate Key With Discord</a>
 
         <div class="copy-row">
           <input id="user-key" placeholder="Paste generated key here">
@@ -37,7 +34,6 @@
         </div>
 
         <textarea id="loader-preview" readonly spellcheck="false"></textarea>
-        <a class="button-link discord-link" href="/api/discord-login">Generate Key With Discord</a>
       </section>
     </section>
   </main>
