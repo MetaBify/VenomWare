@@ -103,6 +103,7 @@ p {
 }
 
 .links a,
+.button-link,
 button,
 input {
   min-height: 44px;
@@ -112,17 +113,26 @@ input {
   background: rgba(54, 35, 24, 0.78);
 }
 
-.links a {
+.links a,
+.button-link {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0 14px;
   text-decoration: none;
 }
 
 .links a:hover,
+.button-link:hover,
 button:hover {
   border-color: #ffb852;
   box-shadow: 0 0 16px rgba(255, 184, 82, 0.22);
+}
+
+.discord-link {
+  justify-self: start;
+  background: rgba(88, 101, 242, 0.28);
+  border-color: rgba(143, 153, 255, 0.55);
 }
 
 .copy-row {

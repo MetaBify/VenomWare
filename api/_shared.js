@@ -89,6 +89,8 @@ async function ensureDb() {
           key TEXT PRIMARY KEY,
           ip TEXT NOT NULL,
           note TEXT DEFAULT '',
+          discord_id TEXT DEFAULT '',
+          discord_username TEXT DEFAULT '',
           active BOOLEAN NOT NULL DEFAULT true,
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           revoked_at TIMESTAMPTZ,
@@ -96,7 +98,10 @@ async function ensureDb() {
           uses INTEGER NOT NULL DEFAULT 0
         )
       `);
+      await dbQuery("ALTER TABLE access_keys ADD COLUMN IF NOT EXISTS discord_id TEXT DEFAULT ''");
+      await dbQuery("ALTER TABLE access_keys ADD COLUMN IF NOT EXISTS discord_username TEXT DEFAULT ''");
       await dbQuery("CREATE INDEX IF NOT EXISTS access_keys_ip_idx ON access_keys (ip)");
+      await dbQuery("CREATE INDEX IF NOT EXISTS access_keys_discord_id_idx ON access_keys (discord_id)");
       await dbQuery(`
         CREATE TABLE IF NOT EXISTS admin_logins (
           id TEXT PRIMARY KEY,
@@ -283,7 +288,7 @@ async function readState() {
       ORDER BY created_at ASC
     `, [MAX_ATTEMPTS]),
     dbQuery(`
-      SELECT key, ip, note, active, created_at, revoked_at, last_used_at, uses
+      SELECT key, ip, note, discord_id, discord_username, active, created_at, revoked_at, last_used_at, uses
       FROM access_keys
       ORDER BY created_at ASC
     `),
@@ -312,6 +317,8 @@ async function readState() {
       key: item.key,
       ip: item.ip,
       note: item.note || "",
+      discordId: item.discord_id || "",
+      discordUsername: item.discord_username || "",
       active: item.active !== false,
       createdAt: toIso(item.created_at),
       revokedAt: toIso(item.revoked_at),
@@ -361,12 +368,14 @@ async function writeState(state) {
 
     for (const item of cleanState.keys) {
       await client.query(`
-        INSERT INTO access_keys (key, ip, note, active, created_at, revoked_at, last_used_at, uses)
-        VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, now()), $6, $7, $8)
+        INSERT INTO access_keys (key, ip, note, discord_id, discord_username, active, created_at, revoked_at, last_used_at, uses)
+        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7::timestamptz, now()), $8, $9, $10)
       `, [
         String(item.key || ""),
         String(item.ip || ""),
         String(item.note || ""),
+        String(item.discordId || ""),
+        String(item.discordUsername || ""),
         item.active !== false,
         toDateOrNull(item.createdAt),
         toDateOrNull(item.revokedAt),
@@ -413,6 +422,83 @@ async function logAttempt(req, status, key) {
 
   await writeState(state);
   return ip;
+}
+
+async function grantDiscordKey({ ip, discordId, discordUsername }) {
+  const state = await readState();
+  const now = new Date().toISOString();
+  const cleanDiscordId = String(discordId || "").trim();
+  const cleanDiscordUsername = String(discordUsername || "").trim();
+
+  if (!ip || !cleanDiscordId) {
+    throw new Error("missing ip or discord id");
+  }
+
+  const existingForUser = state.keys.find((item) => (
+    item.active && item.discordId === cleanDiscordId && item.ip === ip
+  ));
+
+  if (existingForUser) {
+    existingForUser.note = cleanDiscordUsername || existingForUser.note;
+    existingForUser.discordUsername = cleanDiscordUsername;
+    await writeState(state);
+
+    return {
+      created: false,
+      key: existingForUser.key,
+      ip,
+      discordId: cleanDiscordId,
+      discordUsername: cleanDiscordUsername
+    };
+  }
+
+  const existingForIp = state.keys.find((item) => item.active && item.ip === ip && !item.discordId);
+
+  if (existingForIp) {
+    existingForIp.note = cleanDiscordUsername || existingForIp.note;
+    existingForIp.discordId = cleanDiscordId;
+    existingForIp.discordUsername = cleanDiscordUsername;
+    await writeState(state);
+
+    return {
+      created: false,
+      key: existingForIp.key,
+      ip,
+      discordId: cleanDiscordId,
+      discordUsername: cleanDiscordUsername
+    };
+  }
+
+  for (const record of state.keys) {
+    if (record.active && record.discordId === cleanDiscordId && record.ip !== ip) {
+      record.active = false;
+      record.revokedAt = now;
+    }
+  }
+
+  const key = generateKey();
+
+  state.keys.push({
+    key,
+    ip,
+    note: cleanDiscordUsername || cleanDiscordId,
+    discordId: cleanDiscordId,
+    discordUsername: cleanDiscordUsername,
+    active: true,
+    createdAt: now,
+    lastUsedAt: "",
+    uses: 0
+  });
+
+  await writeState(state);
+
+  return {
+    created: true,
+    key,
+    ip,
+    discordId: cleanDiscordId,
+    discordUsername: cleanDiscordUsername
+  };
 }
 
 async function readScriptBody() {
@@ -466,6 +552,7 @@ module.exports = {
   STATE_PATH,
   fakeLua,
   generateKey,
+  grantDiscordKey,
   getClientIp,
   getScriptRateLimit,
   readFreeScriptBody,

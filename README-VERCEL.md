@@ -20,6 +20,26 @@ ADMIN_KEY=your_admin_password
 DATABASE_URL=postgresql://...
 ```
 
+Discord role key generation also uses:
+
+```text
+DISCORD_CLIENT_ID=your_discord_app_client_id
+DISCORD_CLIENT_SECRET=your_discord_app_client_secret
+DISCORD_BOT_TOKEN=your_discord_bot_token
+DISCORD_GUILD_ID=your_server_id
+DISCORD_ROLE_ID=allowed_role_id
+DISCORD_STATE_SECRET=random_long_secret
+```
+
+Optional Discord/VPN settings:
+
+```text
+DISCORD_ALLOWED_ROLE_IDS=role_id_1,role_id_2
+DISCORD_REDIRECT_URI=https://your-domain.vercel.app/api/discord-callback
+PROXYCHECK_API_KEY=proxycheck_api_key
+VPN_RISK_LIMIT=66
+```
+
 Optional fallback script variables:
 
 ```text
@@ -53,10 +73,13 @@ The generated key only works from the approved IP.
 
 The landing page also has a small tutorial and a keyed-loader copy box. Paste the generated key there to build the executor loader.
 
+Users can also click `Generate Key With Discord`. The website sends them through Discord login, checks that the bot can see the required role in `DISCORD_GUILD_ID`, optionally blocks VPN/proxy IPs through proxycheck.io, then writes the key to the same database.
+
 ## Notes
 
 - Do not commit private scripts into a public GitHub repo.
 - Paste obfuscated code into the admin panel after deploy.
 - A key inside a client loader can be copied, but copied keys only work from the approved IP.
+- The Discord bot must be in your server and able to read the member/role lookup for the configured guild.
 - `/api/script` is limited to 67 requests per IP in a rolling 24-hour window.
 - Home and mobile IPs can change; if that happens, approve the new IP and revoke the old key.
