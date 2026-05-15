@@ -141,6 +141,23 @@ button:hover {
   gap: 10px;
 }
 
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.loader-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.loader-grid span {
+  color: #d7bea0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 input {
   width: 100%;
   padding: 0 12px;
@@ -433,7 +450,8 @@ textarea {
   font: 13px/1.45 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
-#loader-preview {
+#regular-loader-preview,
+#test-loader-preview {
   min-height: 76px;
 }
 
@@ -471,6 +489,7 @@ textarea {
   .admin-grid,
   .approved-header,
   .approved-row,
+  .loader-grid,
   .pending-row,
   .section-head,
   .links,

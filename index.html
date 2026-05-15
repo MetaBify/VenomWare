@@ -22,18 +22,29 @@
         <h2>How to use</h2>
         <ol>
           <li>Click Generate Key With Discord and authorize your Discord account.</li>
-          <li>If you have the required role, your key and loader will appear.</li>
-          <li>Paste the key below only if you want to rebuild the loader later.</li>
+          <li>If you have the required role, your key and loaders will appear.</li>
+          <li>Paste the key below only if you want to rebuild the loaders later.</li>
         </ol>
 
         <a class="button-link discord-link" href="/api/discord-login">Generate Key With Discord</a>
 
         <div class="copy-row">
           <input id="user-key" placeholder="Paste generated key here">
-          <button id="copy-keyed-loader" type="button">Copy Keyed Loader</button>
+          <button id="copy-regular-loader" type="button">Copy Regular Loader</button>
         </div>
 
-        <textarea id="loader-preview" readonly spellcheck="false"></textarea>
+        <button id="copy-test-loader" type="button">Copy Test Loader</button>
+
+        <div class="loader-grid">
+          <label>
+            <span>Regular loader</span>
+            <textarea id="regular-loader-preview" readonly spellcheck="false"></textarea>
+          </label>
+          <label>
+            <span>Test loader</span>
+            <textarea id="test-loader-preview" readonly spellcheck="false"></textarea>
+          </label>
+        </div>
       </section>
     </section>
   </main>

@@ -105,8 +105,8 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function loaderFor(req, key) {
-  const scriptUrl = new URL("/api/script", getBaseUrl(req));
+function loaderFor(req, key, path = "/api/script") {
+  const scriptUrl = new URL(path, getBaseUrl(req));
   const verifyUrl = new URL("/api/verify", getBaseUrl(req));
 
   scriptUrl.searchParams.set("null", key);
@@ -241,7 +241,7 @@ async function checkIpRisk(ip) {
   return { ok: true, checked: true, risk };
 }
 
-function successBody({ key, loader, ip, username, created }) {
+function successBody({ key, regularLoader, testLoader, ip, username, created }) {
   return `
     <div class="brand">
       <div class="mark"><img src="/assets/logo.png" alt="Venom Ware logo"></div>
@@ -253,8 +253,20 @@ function successBody({ key, loader, ip, username, created }) {
     <section class="tutorial">
       <h2>Your key</h2>
       <textarea readonly spellcheck="false">${escapeHtml(key)}</textarea>
-      <h2>Your keyed loader</h2>
-      <textarea readonly spellcheck="false">${escapeHtml(loader)}</textarea>
+      <div class="loader-grid">
+        <label>
+          <span>Regular loader</span>
+          <textarea id="regular-loader" readonly spellcheck="false">${escapeHtml(regularLoader)}</textarea>
+        </label>
+        <label>
+          <span>Test loader</span>
+          <textarea id="test-loader" readonly spellcheck="false">${escapeHtml(testLoader)}</textarea>
+        </label>
+      </div>
+      <div class="copy-row">
+        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('regular-loader').value).then(() => this.textContent = 'Copied Regular')">Copy Regular Loader</button>
+        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('test-loader').value).then(() => this.textContent = 'Copied Test')">Copy Test Loader</button>
+      </div>
       <p class="status-text">Locked to IP ${escapeHtml(ip)}. If you switch VPNs or networks, verify again.</p>
       <a class="button-link" href="/">Back to generator</a>
     </section>
@@ -338,7 +350,8 @@ module.exports = async function handler(req, res) {
     await logAttempt(req, "discord-approved", grant.key);
     res.status(200).send(htmlPage("Access Ready", successBody({
       key: grant.key,
-      loader: loaderFor(req, grant.key),
+      regularLoader: loaderFor(req, grant.key),
+      testLoader: loaderFor(req, grant.key, "/api/test-script"),
       ip: clientIp,
       username,
       created: grant.created
