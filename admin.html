@@ -89,6 +89,19 @@
 
       <section>
         <div class="section-head">
+          <h2>Test Body Script</h2>
+          <button id="load-test-script" type="button">Load Test Script</button>
+        </div>
+        <p id="test-script-state">Not loaded.</p>
+        <textarea id="test-script-body" spellcheck="false" placeholder="Paste test obfuscated Lua here."></textarea>
+        <div class="copy-row">
+          <input id="test-loader" readonly placeholder="Test loader URL">
+          <button id="save-test-script" type="button">Save Test Script</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
           <h2>Free Script Body</h2>
           <button id="load-free-script" type="button">Load Free Script</button>
         </div>

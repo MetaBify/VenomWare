@@ -1,9 +1,30 @@
-venom-host/
-obfuscator/
-libs/
+# Ignore everything by default so only the website/API host is committed.
+*
+
+# Site/app files
+!.gitignore
+!README.md
+!README-VERCEL.md
+!.env.example
+!package.json
+!package-lock.json
+!vercel.json
+!index.html
+!admin.html
+!admin.js
+!site.css
+!site.js
+
+# Vercel serverless API and static assets
+!api/
+!api/**
+!assets/
+!assets/**
+
+# Local-only runtime/config/output
 .env
 .env.local
 .env.*.local
-*.lua
-*.local-before-pull
-*.before-feature-removal.*.lua
+.vercel/
+node_modules/
+venom-host/

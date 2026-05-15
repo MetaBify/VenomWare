@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const STATE_PATH = "venom-host/state.json";
 const SCRIPT_PATH = "venom-host/script.lua";
 const FREE_SCRIPT_PATH = "venom-host/free-script.lua";
+const TEST_SCRIPT_PATH = "venom-host/test-script.lua";
 const MAX_ATTEMPTS = 250;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 4;
 const ADMIN_LOGIN_WINDOW_MS = 60 * 60 * 1000;
@@ -519,6 +520,24 @@ async function writeScriptBody(body) {
   await writeTextBlob(SCRIPT_PATH, body, "text/plain; charset=utf-8");
 }
 
+async function readTestScriptBody() {
+  const blobBody = await readTextBlob(TEST_SCRIPT_PATH);
+
+  if (blobBody) {
+    return blobBody;
+  }
+
+  if (process.env.TEST_SCRIPT_BODY_BASE64) {
+    return Buffer.from(process.env.TEST_SCRIPT_BODY_BASE64, "base64").toString("utf8");
+  }
+
+  return process.env.TEST_SCRIPT_BODY || "";
+}
+
+async function writeTestScriptBody(body) {
+  await writeTextBlob(TEST_SCRIPT_PATH, body, "text/plain; charset=utf-8");
+}
+
 async function readFreeScriptBody() {
   const blobBody = await readTextBlob(FREE_SCRIPT_PATH);
 
@@ -550,6 +569,7 @@ module.exports = {
   FREE_SCRIPT_PATH,
   SCRIPT_PATH,
   STATE_PATH,
+  TEST_SCRIPT_PATH,
   fakeLua,
   generateKey,
   grantDiscordKey,
@@ -557,11 +577,13 @@ module.exports = {
   getScriptRateLimit,
   readFreeScriptBody,
   readScriptBody,
+  readTestScriptBody,
   readState,
   recordScriptRequest,
   requireAdmin,
   writeFreeScriptBody,
   writeScriptBody,
+  writeTestScriptBody,
   writeState,
   logAttempt
 };

@@ -3,9 +3,11 @@ const {
   readFreeScriptBody,
   readScriptBody,
   readState,
+  readTestScriptBody,
   requireAdmin,
   writeFreeScriptBody,
   writeScriptBody,
+  writeTestScriptBody,
   writeState
 } = require("./_shared");
 
@@ -47,6 +49,7 @@ async function handleAdmin(req, res) {
   if (req.method === "GET" && action === "state") {
     const state = await readState();
     const scriptBody = await readScriptBody();
+    const testScriptBody = await readTestScriptBody();
     const freeScriptBody = await readFreeScriptBody();
 
     res.status(200).json({
@@ -54,6 +57,8 @@ async function handleAdmin(req, res) {
       ...normalizeStateForClient(state),
       hasScript: scriptBody.length > 0,
       scriptLength: scriptBody.length,
+      hasTestScript: testScriptBody.length > 0,
+      testScriptLength: testScriptBody.length,
       hasFreeScript: freeScriptBody.length > 0,
       freeScriptLength: freeScriptBody.length
     });
@@ -67,6 +72,17 @@ async function handleAdmin(req, res) {
       ok: true,
       script: scriptBody,
       length: scriptBody.length
+    });
+    return;
+  }
+
+  if (req.method === "GET" && action === "testScript") {
+    const testScriptBody = await readTestScriptBody();
+
+    res.status(200).json({
+      ok: true,
+      script: testScriptBody,
+      length: testScriptBody.length
     });
     return;
   }
@@ -211,6 +227,19 @@ async function handleAdmin(req, res) {
     }
 
     await writeScriptBody(script);
+    res.status(200).json({ ok: true, length: script.length });
+    return;
+  }
+
+  if (action === "testScript") {
+    const script = String(body.script || "");
+
+    if (!script.trim()) {
+      res.status(400).json({ ok: false, error: "missing test script" });
+      return;
+    }
+
+    await writeTestScriptBody(script);
     res.status(200).json({ ok: true, length: script.length });
     return;
   }

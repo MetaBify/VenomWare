@@ -7,14 +7,19 @@ const refreshButton = document.querySelector("#refresh-state");
 const logoutButton = document.querySelector("#logout-button");
 const saveButton = document.querySelector("#save-script");
 const loadScriptButton = document.querySelector("#load-script");
+const saveTestButton = document.querySelector("#save-test-script");
+const loadTestScriptButton = document.querySelector("#load-test-script");
 const saveFreeButton = document.querySelector("#save-free-script");
 const loadFreeScriptButton = document.querySelector("#load-free-script");
 const revokeAllButton = document.querySelector("#revoke-all");
 const revokeAllConfirm = document.querySelector("#revoke-all-confirm");
 const scriptInput = document.querySelector("#script-body");
 const scriptState = document.querySelector("#script-state");
+const testScriptInput = document.querySelector("#test-script-body");
+const testScriptState = document.querySelector("#test-script-state");
 const freeScriptInput = document.querySelector("#free-script-body");
 const freeScriptState = document.querySelector("#free-script-state");
+const testLoader = document.querySelector("#test-loader");
 const freeLoader = document.querySelector("#free-loader");
 const attemptsEl = document.querySelector("#attempts");
 const keysEl = document.querySelector("#keys");
@@ -34,6 +39,14 @@ function adminKey() {
 
 function freeLoaderText() {
   return `loadstring(game:HttpGet("${new URL("/api/free", window.location.origin).toString()}"))()`;
+}
+
+function testLoaderText(key = "YOUR_KEY") {
+  const url = new URL("/api/test-script", window.location.origin);
+  url.searchParams.set("null", key);
+  const verifyUrl = new URL("/api/verify", window.location.origin).toString();
+
+  return `getgenv().key=${JSON.stringify(key)};getgenv().venom_auth_verify_url=${JSON.stringify(verifyUrl)};loadstring(game:HttpGet(${JSON.stringify(url.toString())}))()`;
 }
 
 async function api(action, options = {}) {
@@ -121,6 +134,7 @@ async function approveIp(ip, note) {
   });
 
   generatedKey.value = data.key;
+  testLoader.value = testLoaderText(data.key);
   await navigator.clipboard?.writeText(data.key).catch(() => {});
   renderState(data);
   scriptState.textContent = `Approved ${data.ip}${note ? ` for ${note}` : ""}. Generated key copied if browser allowed it.`;
@@ -279,6 +293,10 @@ function renderState(data) {
   freeScriptState.textContent = data.hasFreeScript
     ? `Stored free script length: ${data.freeScriptLength} bytes`
     : "No free script body stored yet.";
+  testScriptState.textContent = data.hasTestScript
+    ? `Stored test script length: ${data.testScriptLength} bytes`
+    : "No test script body stored yet.";
+  testLoader.value = testLoaderText();
   freeLoader.value = freeLoaderText();
 
   renderApprovedUsers(data.approvedUsers || []);
@@ -307,7 +325,9 @@ function logout() {
   sessionStorage.removeItem("adminKey");
   generatedKey.value = "";
   scriptInput.value = "";
+  testScriptInput.value = "";
   freeScriptInput.value = "";
+  testLoader.value = "";
   freeLoader.value = "";
   attemptsEl.replaceChildren();
   keysEl.replaceChildren();
@@ -336,6 +356,16 @@ async function loadStoredFreeScript() {
   freeLoader.value = freeLoaderText();
 }
 
+async function loadStoredTestScript() {
+  const data = await api("testScript");
+
+  testScriptInput.value = data.script || "";
+  testScriptState.textContent = data.length
+    ? `Loaded test script length: ${data.length} bytes`
+    : "No test script body yet.";
+  testLoader.value = testLoaderText();
+}
+
 async function saveScript() {
   const script = scriptInput.value;
 
@@ -351,6 +381,24 @@ async function saveScript() {
 
   scriptState.textContent = `Saved script length: ${data.length} bytes. Previous script was replaced.`;
   scriptInput.value = "";
+}
+
+async function saveTestScript() {
+  const script = testScriptInput.value;
+
+  if (!script.trim()) {
+    testScriptState.textContent = "Paste test script body before saving.";
+    return;
+  }
+
+  const data = await api("testScript", {
+    method: "POST",
+    body: JSON.stringify({ script })
+  });
+
+  testScriptState.textContent = `Saved test script length: ${data.length} bytes. Test endpoint was replaced.`;
+  testLoader.value = testLoaderText();
+  testScriptInput.value = "";
 }
 
 async function saveFreeScript() {
@@ -398,6 +446,18 @@ saveButton.addEventListener("click", () => {
 loadScriptButton.addEventListener("click", () => {
   loadStoredScript().catch((error) => {
     scriptState.textContent = error.message;
+  });
+});
+
+saveTestButton.addEventListener("click", () => {
+  saveTestScript().catch((error) => {
+    testScriptState.textContent = error.message;
+  });
+});
+
+loadTestScriptButton.addEventListener("click", () => {
+  loadStoredTestScript().catch((error) => {
+    testScriptState.textContent = error.message;
   });
 });
 
